@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### ReleaseOps local state (never commit) ###
+.releaseops/
+reports/out/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+.env
+.env.*
+*.pem
+*.key
+kubeconfig*
