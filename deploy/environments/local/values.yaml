@@ -5,8 +5,8 @@
 replicaCount: 2
 
 image:
-  repository: localhost:5001/releaseops/app
-  digest: ""
+  repository: ghcr.io/omarchouchane/releaseops-app
+  digest: sha256:50371e491e44741cf50a4d3c1d33b5af42e4e126182ad2b4b7365cc83d7b5290
 
 service:
   type: NodePort
