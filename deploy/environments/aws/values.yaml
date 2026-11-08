@@ -1,0 +1,27 @@
+# Same chart as the local environment, different settings. UNPROVISIONED/UNTESTED on a live
+# cluster - see infra/terraform/aws/README.md. To use it, point an Argo CD Application at
+# valueFiles: ../../environments/aws/values.yaml.
+
+replicaCount: 2
+
+image:
+  # Output "ecr_repository_url" of infra/terraform/aws. Digest is written by the release process.
+  repository: 000000000000.dkr.ecr.eu-central-1.amazonaws.com/releaseops/app
+  digest: ""
+
+service:
+  type: ClusterIP # expose through your ingress / ALB controller of choice
+
+secret:
+  existingSecret: releaseops-db # create it with External Secrets / Secrets Manager, never in Git
+  create: false
+
+mysql:
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "" # cluster default (EBS CSI)
+  # For production prefer RDS: mysql.enabled=false and config.database.host=<rds endpoint>.
+
+monitoring:
+  enabled: false # enable once a Prometheus Operator stack is installed
