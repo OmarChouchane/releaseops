@@ -1,0 +1,15 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.dashboard.enabled }}
+# Picked up by the Grafana dashboard sidecar (label grafana_dashboard=1).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "releaseops.name" . }}-dashboard
+  labels:
+    {{- include "releaseops.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "ReleaseOps"
+data:
+  releaseops.json: |-
+{{ .Files.Get "dashboards/releaseops.json" | indent 4 }}
+{{- end }}

@@ -1,0 +1,75 @@
+{{- if .Values.monitoring.enabled }}
+# Requires the Prometheus Operator CRDs (installed by the monitoring stack). Disable with
+# monitoring.enabled=false on clusters without them.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "releaseops.name" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "releaseops.selectorLabels" . | nindent 6 }}
+  podMetricsEndpoints:
+    - port: management
+      path: /actuator/prometheus
+      interval: {{ .Values.monitoring.scrapeInterval }}
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "releaseops.name" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: releaseops.availability
+      rules:
+        - alert: ReleaseOpsNoAvailableReplicas
+          expr: |
+            kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}",deployment="{{ include "releaseops.name" . }}"} == 0
+          for: {{ .Values.monitoring.alertFor }}
+          labels: { severity: critical }
+          annotations:
+            summary: "No available replicas of {{ include "releaseops.name" . }}"
+            description: "The API has had zero Ready pods for {{ .Values.monitoring.alertFor }}. Check `kubectl -n {{ .Release.Namespace }} describe pods` and the Argo CD application."
+        - alert: ReleaseOpsRolloutStuck
+          expr: |
+            kube_deployment_status_condition{namespace="{{ .Release.Namespace }}",deployment="{{ include "releaseops.name" . }}",condition="Progressing",status="false"} == 1
+          for: 1m
+          labels: { severity: warning }
+          annotations:
+            summary: "Rollout of {{ include "releaseops.name" . }} exceeded its progress deadline"
+            description: "The Deployment reports Progressing=False (ProgressDeadlineExceeded). The previous ReplicaSet keeps serving; revert the Git change that introduced the release."
+        - alert: ReleaseOpsPodRestarting
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",pod=~"{{ include "releaseops.name" . }}-.*"}[10m]) > 2
+          for: 1m
+          labels: { severity: warning }
+          annotations:
+            summary: "{{ "{{ $labels.pod }}" }} restarted more than twice in 10 minutes"
+    - name: releaseops.service
+      rules:
+        - alert: ReleaseOpsDatabaseDown
+          expr: |
+            min(app_database_up{namespace="{{ .Release.Namespace }}"}) == 0
+          for: {{ .Values.monitoring.alertFor }}
+          labels: { severity: critical }
+          annotations:
+            summary: "The application cannot reach MySQL"
+            description: "app_database_up has been 0. Pods stay running (liveness ignores the DB) but are removed from the Service by readiness."
+        - alert: ReleaseOps5xxRatioHigh
+          expr: |
+            sum(rate(http_server_requests_seconds_count{namespace="{{ .Release.Namespace }}",status=~"5..",uri!~"/actuator.*"}[5m]))
+              / clamp_min(sum(rate(http_server_requests_seconds_count{namespace="{{ .Release.Namespace }}",uri!~"/actuator.*"}[5m])), 1e-9) > 0.05
+          for: 5m
+          labels: { severity: warning }
+          annotations:
+            summary: "More than 5% of API requests return 5xx"
+        - alert: ReleaseOpsTargetDown
+          expr: |
+            sum(up{namespace="{{ .Release.Namespace }}",container="app"}) < {{ .Values.replicaCount }}
+          for: 3m
+          labels: { severity: warning }
+          annotations:
+            summary: "Fewer metric targets are up than the desired replica count"
+{{- end }}
