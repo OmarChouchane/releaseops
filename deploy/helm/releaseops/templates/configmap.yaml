@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "releaseops.name" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+data:
+  SPRING_APPLICATION_NAME: {{ .Values.config.applicationName | quote }}
+  SPRING_DATASOURCE_URL: {{ printf "jdbc:mysql://%s:3306/%s" (include "releaseops.dbHost" .) .Values.config.database.name | quote }}
+  SPRING_DATASOURCE_WRITER_URL: {{ printf "jdbc:mysql://%s:3306/%s" (include "releaseops.dbHost" .) .Values.config.database.name | quote }}
+  # Actuator on its own port: reachable by kubelet and Prometheus, absent from the Service.
+  MANAGEMENT_SERVER_PORT: {{ .Values.service.managementPort | quote }}
+  ACTUATOR_ENDPOINTS: "health,info,prometheus"
+  # Finish in-flight requests before the kubelet's SIGKILL (grace period minus preStop slack).
+  SHUTDOWN_TIMEOUT: {{ printf "%ds" (sub (int .Values.terminationGracePeriodSeconds) (add 5 (int .Values.preStopSleepSeconds)) | int) | quote }}
+  {{- range $k, $v := .Values.config.extra }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "releaseops.name" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector: {{- include "releaseops.selectorLabels" . | nindent 4 }}
+  ports:
+    # Only the API port. Actuator (management port) is intentionally not exposed here.
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}

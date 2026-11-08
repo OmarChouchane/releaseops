@@ -1,0 +1,10 @@
+apiVersion: v2
+name: releaseops
+description: Crewmeister challenge user API (Spring Boot) with a MySQL StatefulSet, probes, metrics and alerts.
+type: application
+# Chart version: bump when templates or values semantics change.
+version: 0.1.0
+# appVersion is informational; the deployed artefact is pinned by image.digest.
+appVersion: "0.0.1"
+kubeVersion: ">=1.30.0-0"
+keywords: [spring-boot, mysql, gitops]

@@ -1,0 +1,129 @@
+{{- if .Values.mysql.enabled }}
+# MySQL is part of this chart so the whole stack is one reviewable, portable unit.
+# For production you would normally use a managed database (RDS/Cloud SQL) and set
+# mysql.enabled=false + config.database.host; see docs/adr/0006-mysql-in-cluster.md.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "releaseops.mysqlName" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+spec:
+  # ClusterIP only: MySQL is never published outside the cluster.
+  type: ClusterIP
+  selector: {{- include "releaseops.mysqlSelectorLabels" . | nindent 4 }}
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "releaseops.mysqlName" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mysql
+spec:
+  replicas: 1
+  serviceName: {{ include "releaseops.mysqlName" . }}
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels: {{- include "releaseops.mysqlSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "releaseops.mysqlSelectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "releaseops.mysqlName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mysql
+          image: "{{ .Values.mysql.image.repository }}@{{ .Values.mysql.image.digest }}"
+          imagePullPolicy: IfNotPresent
+          args: {{- toYaml .Values.mysql.args | nindent 12 }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              value: {{ .Values.config.database.name | quote }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "releaseops.secretName" . }}
+                  key: mysql-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "releaseops.secretName" . }}
+                  key: mysql-password
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "releaseops.secretName" . }}
+                  key: mysql-root-password
+          # The password is read from the container environment at probe time, so it never
+          # appears in the manifest.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 5
+            failureThreshold: 60
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources: {{- toYaml .Values.mysql.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: run
+              mountPath: /var/run/mysqld
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        {{- if not .Values.mysql.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.mysql.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels: {{- include "releaseops.mysqlSelectorLabels" . | nindent 10 }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.mysql.persistence.storageClass }}
+        storageClassName: {{ .Values.mysql.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mysql.persistence.size }}
+  {{- end }}
+{{- end }}
