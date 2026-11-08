@@ -4,13 +4,23 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+  # Major bumps (e.g. Spring Boot 4) are a planned migration, not an automatic PR.
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   # Updates the digest-pinned base images in the Dockerfile.
+  # The app targets Java 17 (LTS): do not jump to another Java major automatically.
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: terraform
     directory: /infra/terraform/local
     schedule: { interval: weekly }
