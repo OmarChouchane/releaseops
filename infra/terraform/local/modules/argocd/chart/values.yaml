@@ -1,0 +1,5 @@
+appName: releaseops
+appNamespace: releaseops
+environment: local
+repoURL: ""
+revision: main

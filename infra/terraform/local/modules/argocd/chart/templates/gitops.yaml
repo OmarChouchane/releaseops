@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ .Values.appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  description: ReleaseOps application - least-privilege project
+  # Only this repository may be deployed from ...
+  sourceRepos:
+    - {{ .Values.repoURL | quote }}
+  # ... and only into this namespace of this cluster.
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: {{ .Values.appNamespace }}
+  # The application chart contains namespaced resources only: no cluster-scoped kinds allowed,
+  # so a compromised Git commit can not create ClusterRoles or Namespaces.
+  clusterResourceWhitelist: []
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.appName }}
+  namespace: {{ .Release.Namespace }}
+  # Deleting the Application (terraform destroy) also deletes what it deployed.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ .Values.appName }}
+  source:
+    repoURL: {{ .Values.repoURL | quote }}
+    targetRevision: {{ .Values.revision | quote }}
+    path: deploy/helm/releaseops
+    helm:
+      releaseName: {{ .Values.appName }}
+      # Relative to the chart path; the image digest and environment settings live here.
+      valueFiles:
+        - ../../environments/{{ .Values.environment }}/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.appNamespace }}
+  syncPolicy:
+    automated:
+      prune: true      # resources removed from Git are removed from the cluster
+      selfHeal: true   # manual kubectl edits are reverted (drift correction)
+    syncOptions:
+      - CreateNamespace=false   # the namespace is owned by Terraform
+      - ServerSideApply=true
+      - PruneLast=true
+      # PodMonitor/PrometheusRule CRDs come from the monitoring stack; do not fail the dry-run if
+      # that stack is still starting.
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 2m }
+  revisionHistoryLimit: 10
+  ignoreDifferences:
+    # The StatefulSet controller fills volumeClaimTemplates defaults after creation.
+    - group: apps
+      kind: StatefulSet
+      jqPathExpressions:
+        - .spec.volumeClaimTemplates[]?.apiVersion
+        - .spec.volumeClaimTemplates[]?.kind
+        - .spec.volumeClaimTemplates[]?.status
