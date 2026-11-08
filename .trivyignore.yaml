@@ -1,0 +1,25 @@
+# Vulnerability exceptions for the image scan (Trivy). Used by CI and by `./run.sh deploy`.
+#
+# Rules for adding an entry (enforced in review):
+#   * one CVE per entry, never a blanket ignore, never a severity downgrade
+#   * `statement` says WHY it is acceptable and how that was verified
+#   * `expired_at` is mandatory: the exception stops working on that date and the build fails again,
+#     which forces someone to re-decide
+#
+# Both entries below: spring-webmvc 6.2.19 is the LAST open-source release of the 6.2 line (Maven Central
+# shows no 6.2.20); Trivy lists the fix only in Spring Framework 7.0.9 (the Spring Boot 4 line).
+# The real remediation is the Boot 4 migration (see docs/adr/0002-spring-boot-upgrade.md).
+
+vulnerabilities:
+  - id: CVE-2026-47884
+    statement: >-
+      Affects XsltView (XSLT view rendering) in spring-webmvc. This application is a pure REST service:
+      no view resolver, no XSLT, no templates (verified by grepping src/ for Xslt/ViewResolver/ModelAndView/@Controller
+      and checking the POM has no template engine). The vulnerable class is never loaded.
+      No fix exists in the 6.2 line.
+    expired_at: 2026-12-31
+  - id: CVE-2026-47890
+    statement: >-
+      Affects Server-Sent Events combined with view rendering in spring-webmvc. The application uses neither
+      SSE (no SseEmitter / text/event-stream) nor views (verified by grep of src/). No fix exists in the 6.2 line.
+    expired_at: 2026-12-31
