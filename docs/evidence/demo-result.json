@@ -1,0 +1,147 @@
+{
+  "status": "passed",
+  "scenario": "bad-config",
+  "gitopsMode": "local",
+  "finishedAt": "2026-11-08T14:37:08Z",
+  "knownGoodRevision": "f44a0ebd5329e1576a2621b5fb14b474d621b925",
+  "badRevision": "0541e823426456bd26ba599919dd5d3df3f6fbd3",
+  "revertRevision": "1bc24f865f1ff4b8ceac0d6b2485af8f8cc8ec80",
+  "knownGoodImageDigest": "sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+  "secondsToDetectFailure": 66,
+  "secondsToRecover": 7,
+  "driftSelfHeal": {
+    "change": "kubectl scale replicas 2 -> 3",
+    "outOfSyncObserved": true,
+    "selfHealed": true,
+    "secondsToHeal": 0
+  },
+  "serviceDuringBadRelease": {
+    "probe": "GET /user?id=1 every 0.5s from just before the bad commit until recovery was verified",
+    "requests": 316,
+    "http200": 316,
+    "notOk": 0,
+    "note": "maxUnavailable=0: the previous ReplicaSet keeps serving while the new pods are not Ready"
+  },
+  "prometheusAlert": {
+    "alert": "ReleaseOpsRolloutStuck",
+    "finalState": "firing",
+    "secondsWaited": 90
+  },
+  "dataSurvival": {
+    "canaryUser": "canary-143423",
+    "canaryLocation": "/user?id=4",
+    "readableAfterRecovery": true,
+    "mysqlPodUntouched": true
+  },
+  "badReleaseVerification": {
+    "result": "failed",
+    "summary": {
+      "passed": 8,
+      "failed": 3,
+      "skipped": 1
+    },
+    "failedChecks": [
+      {
+        "name": "argocd.health",
+        "detail": "health=Degraded:  Deployment Progressing=False (ProgressDeadlineExceeded)"
+      },
+      {
+        "name": "k8s.rollout",
+        "detail": "ProgressDeadlineExceeded: updated=1 available=2/2 total=3"
+      },
+      {
+        "name": "k8s.pods",
+        "detail": "pods not Ready: releaseops-7575fb7fd8-j6gv6"
+      }
+    ],
+    "likelyCause": "the application cannot connect to MySQL (connection refused / link failure)"
+  },
+  "recoveryVerification": {
+    "result": "passed",
+    "summary": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "diagnostics": "### Argo CD application\nsync=Synced health=Degraded revision=0541e823426456bd26ba599919dd5d3df3f6fbd3\noperation Succeeded: successfully synced (all tasks run)\n\n### Deployment\nAvailable=True reason=MinimumReplicasAvailable: Deployment has minimum availability.\nProgressing=False reason=ProgressDeadlineExceeded: ReplicaSet \"releaseops-7575fb7fd8\" has timed out progressing.\n\n### Pods\nNAME                          READY   STATUS    RESTARTS   AGE     IP            NODE                       NOMINATED NODE   READINESS GATES\nreleaseops-7575fb7fd8-j6gv6   0/1     Running   0          64s     10.244.0.21   releaseops-control-plane   <none>           <none>\nreleaseops-b8d45cfcd-d8tsx    1/1     Running   0          2m59s   10.244.0.17   releaseops-control-plane   <none>           <none>\nreleaseops-b8d45cfcd-sm54d    1/1     Running   0          2m59s   10.244.0.16   releaseops-control-plane   <none>           <none>\nreleaseops-mysql-0            1/1     Running   0          2m59s   10.244.0.19   releaseops-control-plane   <none>           <none>\n\n### releaseops-7575fb7fd8-j6gv6: container state\nwaiting=- lastTerminated=- exitCode=- restarts=0\n### releaseops-7575fb7fd8-j6gv6: events\nLAST SEEN   TYPE      REASON      OBJECT                            MESSAGE\n63s         Normal    Scheduled   pod/releaseops-7575fb7fd8-j6gv6   Successfully assigned releaseops/releaseops-7575fb7fd8-j6gv6 to releaseops-control-plane\n63s         Normal    Pulled      pod/releaseops-7575fb7fd8-j6gv6   Container image \"localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c\" already present on machine and can be accessed by the pod\n63s         Normal    Created     pod/releaseops-7575fb7fd8-j6gv6   Container created\n63s         Normal    Started     pod/releaseops-7575fb7fd8-j6gv6   Container started\n3s          Warning   Unhealthy   pod/releaseops-7575fb7fd8-j6gv6   Startup probe failed: Get \"http://10.244.0.21:8081/actuator/health/liveness\": dial tcp 10.244.0.21:8081: connect: connection refused\n### releaseops-7575fb7fd8-j6gv6: application log (errors)\n(Caused by releaseops-mysql-typo)\n(Caused by releaseops-mysql-typo: Name does not resolve)\n2026-11-08T14:34:32.183Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:33.184Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:35.186Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:39.187Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:46.065Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:51.067Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure",
+  "timeline": [
+    {
+      "phase": "precondition",
+      "status": "pass",
+      "detail": "baseline verification passed; demo starts from a healthy system",
+      "at": "2026-11-08T14:34:23Z",
+      "elapsedSeconds": 6
+    },
+    {
+      "phase": "known-good",
+      "status": "record",
+      "detail": "git f44a0ebd5329, image sha256:73c121b088f3…; canary user 'canary-143423' stored at /user?id=4; MySQL pod uid b1ed4079",
+      "at": "2026-11-08T14:34:23Z",
+      "elapsedSeconds": 6
+    },
+    {
+      "phase": "drift",
+      "status": "pass",
+      "detail": "replicas 3 reverted to 2 by Argo CD in 0s (OutOfSync observed: yes)",
+      "at": "2026-11-08T14:34:24Z",
+      "elapsedSeconds": 7
+    },
+    {
+      "phase": "bad-release",
+      "status": "pushed",
+      "detail": "bad revision 0541e8234264 on top of known-good f44a0ebd5329",
+      "at": "2026-11-08T14:34:24Z",
+      "elapsedSeconds": 7
+    },
+    {
+      "phase": "detection",
+      "status": "detected",
+      "detail": "failure detected 66s after the bad commit",
+      "at": "2026-11-08T14:35:30Z",
+      "elapsedSeconds": 73
+    },
+    {
+      "phase": "alert",
+      "status": "pass",
+      "detail": "ReleaseOpsRolloutStuck is FIRING in Prometheus (163s into the demo; waited 90s)",
+      "at": "2026-11-08T14:37:00Z",
+      "elapsedSeconds": 163
+    },
+    {
+      "phase": "diagnosis",
+      "status": "info",
+      "detail": "the application cannot connect to MySQL (connection refused / link failure)",
+      "at": "2026-11-08T14:37:00Z",
+      "elapsedSeconds": 163
+    },
+    {
+      "phase": "rollback",
+      "status": "pushed",
+      "detail": "revert commit 1bc24f865f1f restores the desired state of f44a0ebd5329",
+      "at": "2026-11-08T14:37:01Z",
+      "elapsedSeconds": 164
+    },
+    {
+      "phase": "availability",
+      "status": "pass",
+      "detail": "316/316 probe requests returned HTTP 200 across the bad release and the recovery (no user-visible downtime)",
+      "at": "2026-11-08T14:37:07Z",
+      "elapsedSeconds": 170
+    },
+    {
+      "phase": "recovery",
+      "status": "pass",
+      "detail": "all checks pass again 7s after the revert",
+      "at": "2026-11-08T14:37:07Z",
+      "elapsedSeconds": 170
+    },
+    {
+      "phase": "data",
+      "status": "pass",
+      "detail": "record 'canary-143423' created BEFORE the bad release is still readable; the MySQL pod was never restarted",
+      "at": "2026-11-08T14:37:07Z",
+      "elapsedSeconds": 170
+    }
+  ]
+}

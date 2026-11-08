@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "tests": 15,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "durationSeconds": 58,
+  "finishedAt": "2026-11-08T14:32:12Z",
+  "gitRevision": "d49d93ba1e43",
+  "log": ".releaseops/maven.log"
+}
