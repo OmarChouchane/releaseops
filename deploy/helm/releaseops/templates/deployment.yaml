@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "releaseops.name" . }}
+  labels: {{- include "releaseops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 5
+  # A failed rollout must be *reported* (ProgressDeadlineExceeded), not hang for 10 minutes.
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      # Never remove a serving pod before its replacement is Ready: a bad release
+      # leaves the previous version serving traffic.
+      maxUnavailable: 0
+  selector:
+    matchLabels: {{- include "releaseops.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "releaseops.selectorLabels" . | nindent 8 }}
+      annotations:
+        # Roll pods when non-secret configuration changes.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "releaseops.name" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: {{ include "releaseops.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: management
+              containerPort: {{ .Values.service.managementPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "releaseops.name" . }}
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "releaseops.secretName" . }}
+                  key: mysql-user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "releaseops.secretName" . }}
+                  key: mysql-password
+          # Startup gives Flyway time to migrate / wait for MySQL without liveness interfering.
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: management }
+            periodSeconds: 5
+            failureThreshold: {{ .Values.probes.startupFailureThreshold }}
+            timeoutSeconds: 3
+          # Liveness = "is the JVM healthy". It deliberately excludes MySQL, so a database
+          # outage cannot trigger a restart loop of every application pod.
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: management }
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+          # Readiness includes the database: no DB => out of the Service, but not restarted.
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: management }
+            periodSeconds: 5
+            failureThreshold: 3
+            timeoutSeconds: 3
+          lifecycle:
+            preStop:
+              # Let endpoint removal propagate before SIGTERM so no request hits a dying pod.
+              sleep:
+                seconds: {{ .Values.preStopSleepSeconds }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
