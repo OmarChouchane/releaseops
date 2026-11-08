@@ -378,7 +378,7 @@ Everything here was produced on **one machine**, with the code exactly as delive
 | Terraform (local) | `fmt -check`, `validate`, **`apply`** | clean; first apply from zero: **15 resources added**; re-apply converges (2 benign changes) |
 | Terraform (AWS) | `fmt -check`, `validate` | clean — **never planned or applied** |
 | Shell | `bash -n`, `shellcheck -S warning` (v0.10.0) | clean on every script |
-| Workflows | `actionlint` 1.7.7 | clean on all three workflows (**not executed on GitHub**) |
+| Workflows | `actionlint` 1.7.7 | clean on all three workflows; the `ci` workflow also ran on GitHub (run 42503262735: validate, tests, image build + Trivy gate + SBOM + GHCR push, release PR #6 — all green) |
 | NetworkPolicy | a non-app pod connecting to MySQL:3306 | **BLOCKED** (the app itself connects normally) |
 | `./run.sh up` from a clean slate | cluster, registry and Terraform state deleted first (Trivy cache kept) | **exit 0 in 425 s**. The first success took five clean-room attempts; each failure was a real bug, all fixed (below). The run reported here is a sixth, on the final code |
 
@@ -418,7 +418,7 @@ Running the documented one-liner from zero exposed these; none showed up when te
 ## 19. Known limitations
 
 **Not executed (written and statically checked only):**
-* **GitHub Actions** — `actionlint` is clean and every step mirrors something that *was* run locally (Maven, Helm/Terraform validation, Docker build, Trivy, SBOM), but GHCR push, provenance attestation and the release-PR job have never run on GitHub. The release PR needs the repository setting in §9; PRs opened with `GITHUB_TOKEN` do not trigger further workflows.
+* **GitHub Actions, partly** — the `ci` workflow has run once on GitHub with all four jobs green and opened release PR #6 with the image digest. Not yet exercised: merging that PR, Argo CD deploying the GHCR image from it (`GITOPS_MODE=remote`), `gh attestation verify` on the published image, and the manual `aws-plan` workflow. PRs opened with `GITHUB_TOKEN` do not trigger further workflows.
 * **`GITOPS_MODE=remote`** against a real GitHub repository, the private-repo credential Secret, and `DEMO_ALLOW_PUSH` pushes.
 * **AWS/EKS** — `terraform validate` only. IAM, quotas, add-on behaviour and costs are unverified.
 * Anything on macOS, native Linux, arm64, `/mnt/c` working copies, Terraform other than 1.14.5, Helm other than 4.1.3 (CI and the installer pin newer versions that were not exercised here).
