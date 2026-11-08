@@ -5,7 +5,7 @@ terraform {
     # Exact minor pins; .terraform.lock.hcl (committed) pins the exact patch + hashes.
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 3.3.0"
+      version = "~> 3.5.0"
     }
     helm = {
       source  = "hashicorp/helm"
