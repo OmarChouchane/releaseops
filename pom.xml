@@ -6,9 +6,9 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <!-- Was 3.3.5 (OSS support ended 2025-06-30). 3.5.16 is the last OSS patch of the
+    <!-- Was 3.3.5 (OSS support ended 2025-06-30). 4.1.2 is the last OSS patch of the
          next supported-for-Java-17 line; see docs/adr/0002-spring-boot-upgrade.md -->
-    <version>3.5.16</version>
+    <version>4.1.2</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>com.crewmeister</groupId>
