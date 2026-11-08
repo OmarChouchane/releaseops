@@ -6,7 +6,7 @@
 ############################
 # Stage 1: build
 ############################
-FROM eclipse-temurin:17-jdk-alpine@sha256:efefbce46b0d79073a3a676d91ac6c4bf370d348af18e388bbf7482543d7866a AS build
+FROM eclipse-temurin:24-jdk-alpine@sha256:8fdbcb6bc6b846640cea7058e6eeb56c311fae4efaa506a213789134065c6b90 AS build
 WORKDIR /workspace
 
 # Dependencies first: this layer (and the BuildKit cache mount) only invalidates when the
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp -q -DskipTests package \
 ############################
 # Stage 2: runtime
 ############################
-FROM eclipse-temurin:17-jre-alpine@sha256:e2ba4e947bd5e236a9866fbdda03e4936036cb9e9d16ea0d84d103d6634a5c21 AS runtime
+FROM eclipse-temurin:24-jre-alpine@sha256:4044b6c87cb088885bcd0220f7dc7a8a4aab76577605fa471945d2e98270741f AS runtime
 
 ARG VERSION=dev
 ARG REVISION=unknown
