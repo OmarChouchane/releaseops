@@ -10,6 +10,13 @@ on:
   pull_request:
   push:
     branches: [main]
+    # Merging a release PR (or reverting one) only changes the pinned digest. It must not build and
+    # publish a new image, or every release would open the next release PR forever. Docs do not
+    # change the image either.
+    paths-ignore:
+      - deploy/environments/**
+      - docs/**
+      - "**.md"
   workflow_dispatch:
 
 # Deny-by-default; each job asks for exactly what it needs.
