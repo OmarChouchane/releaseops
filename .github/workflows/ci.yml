@@ -1,0 +1,223 @@
+name: ci
+
+# What runs where (see docs/ci.md):
+#   pull_request  -> test, validate, build + scan the image. NO registry login, NO write token, NO secrets.
+#                    (`pull_request`, never `pull_request_target`: fork code never gets privileges.)
+#   push to main  -> the same, then publish to GHCR by digest and open a RELEASE PULL REQUEST that
+#                    pins the new digest in Git. Argo CD deploys only after a human merges it.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Deny-by-default; each job asks for exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TRIVY_VERSION: v0.76.0
+
+jobs:
+  test:
+    name: Maven tests (real MySQL via Testcontainers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: mvn verify
+        run: ./mvnw -B -ntp verify
+      - name: Publish test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 14
+
+  validate:
+    name: Helm, Terraform and shell validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
+        with:
+          version: v4.3.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
+        with:
+          terraform_version: 1.16.7
+          terraform_wrapper: false
+      - name: helm lint + template (strict)
+        run: |
+          D=sha256:0000000000000000000000000000000000000000000000000000000000000000
+          helm lint deploy/helm/releaseops -f deploy/environments/local/values.yaml --set image.digest=$D --strict
+          helm template releaseops deploy/helm/releaseops -n releaseops -f deploy/environments/local/values.yaml --set image.digest=$D > /dev/null
+          helm lint infra/terraform/local/modules/argocd/chart --strict
+      - name: terraform fmt + validate (local and AWS; no credentials, no apply)
+        run: |
+          for d in infra/terraform/local infra/terraform/aws; do
+            terraform -chdir=$d fmt -check -recursive
+            terraform -chdir=$d init -backend=false -input=false
+            terraform -chdir=$d validate
+          done
+      - name: shell syntax + shellcheck
+        run: |
+          for f in run.sh scripts/*.sh scripts/lib/*.sh scripts/git-mirror/entrypoint.sh; do bash -n "$f"; done
+          shellcheck -x -S warning run.sh scripts/*.sh scripts/lib/*.sh
+
+  image:
+    name: Build, scan, SBOM, publish
+    needs: [test, validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write       # push to GHCR (main only - the login step is skipped on pull requests)
+      id-token: write       # keyless provenance signing (main only)
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: meta
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"                   # GHCR names must be lowercase
+          echo "image=ghcr.io/${OWNER}/releaseops-app" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build image (loaded locally, nothing is pushed yet)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: releaseops-app:ci
+          build-args: |
+            VERSION=${{ steps.meta.outputs.tag }}
+            REVISION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Vulnerability scan (fails on fixable HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: releaseops-app:ci
+          version: ${{ env.TRIVY_VERSION }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+          # Findings are never silenced here. A justified, expiring exception goes into .trivyignore.yaml (reviewed in a PR).
+          trivyignores: .trivyignore.yaml
+        env:
+          TRIVY_SKIP_DB_UPDATE: "false"
+      - name: Vulnerability report (JSON, for the record)
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: releaseops-app:ci
+          version: ${{ env.TRIVY_VERSION }}
+          format: json
+          output: trivy-image.json
+          exit-code: "0"
+          trivyignores: .trivyignore.yaml
+      - name: SBOM (SPDX, Syft)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          image: releaseops-app:ci
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: supply-chain-evidence
+          path: |
+            sbom.spdx.json
+            trivy-image.json
+          retention-days: 30
+      # ---- everything below runs on main only; pull requests stop here ----
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push the exact image that was scanned; capture its digest
+        id: push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          docker tag releaseops-app:ci "$IMAGE:${{ steps.meta.outputs.tag }}"
+          docker push "$IMAGE:${{ steps.meta.outputs.tag }}"
+          DIGEST="$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:${{ steps.meta.outputs.tag }}" | cut -d@ -f2)"
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "bad digest: $DIGEST"; exit 1; }
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "### Published" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$IMAGE@$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+      - name: Sign build provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.meta.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  release-pr:
+    name: Propose the release (pull request, human merge)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write        # push the release branch
+      pull-requests: write   # open the PR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pin the new digest in the GitOps environment file
+        run: scripts/ci/update-image-pin.sh "${{ needs.image.outputs.image }}" "${{ needs.image.outputs.digest }}"
+      - name: Open the release pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: release/${{ github.sha }}
+          base: main
+          add-paths: deploy/environments/local/values.yaml
+          commit-message: "release: pin app image ${{ needs.image.outputs.digest }}"
+          title: "release: ${{ needs.image.outputs.image }}@${{ needs.image.outputs.digest }}"
+          labels: release
+          body: |
+            Automated release proposal for commit ${{ github.sha }}.
+
+            | | |
+            |---|---|
+            | Image | `${{ needs.image.outputs.image }}@${{ needs.image.outputs.digest }}` |
+            | Build, tests, Trivy scan, SBOM | [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+            | Provenance | signed attestation attached to the image (verify with `gh attestation verify`) |
+
+            **Merging this PR is the deployment decision.** Argo CD detects the merge and rolls the
+            image out; `./run.sh verify` (or the release-verification workflow step you run) proves it works.
+            Roll back by reverting this PR.

@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Actions are pinned by commit SHA; Dependabot proposes the new SHA + tag comment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: maven
+    directory: /
+    schedule: { interval: weekly }
+  # Updates the digest-pinned base images in the Dockerfile.
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: terraform
+    directory: /infra/terraform/local
+    schedule: { interval: weekly }
+  - package-ecosystem: terraform
+    directory: /infra/terraform/aws
+    schedule: { interval: weekly }
