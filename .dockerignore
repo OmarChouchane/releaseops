@@ -1,0 +1,23 @@
+# Keep the build context small and free of local state or secrets.
+**/.git
+.github
+.idea
+.vscode
+.releaseops
+target
+HELP.md
+*.md
+docs
+deploy
+infra
+scripts
+reports
+Makefile
+run.sh
+**/.terraform
+**/*.tfstate*
+**/*.tfvars
+.env
+.env.*
+Dockerfile
+.dockerignore
