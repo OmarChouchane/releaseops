@@ -1,0 +1,217 @@
+{
+  "generatedAt": "2026-11-08T14:37:09Z",
+  "note": "Every value is read from a result recorded by the scripts that produced it. Anything not executed is marked not-run.",
+  "source": {
+    "workspaceRevision": "d49d93ba1e43",
+    "uncommittedChanges": true
+  },
+  "tooling": {
+    "terraform": "Terraform v1.14.5",
+    "helm": "v4.1.3+gc94d381",
+    "kubernetes": {
+      "server": "v1.36.4"
+    }
+  },
+  "image": {
+    "repository": "localhost:5001/releaseops/app",
+    "tag": "d49d93ba1e43-dirty-20261108143220",
+    "digest": "sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+    "reference": "localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+    "publishedTo": "local (kind) registry",
+    "gitopsCommit": "f44a0ebd5329e1576a2621b5fb14b474d621b925"
+  },
+  "helmChart": {
+    "name": "releaseops",
+    "version": "0.1.0"
+  },
+  "build": {
+    "status": "passed",
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "durationSeconds": 58,
+    "finishedAt": "2026-11-08T14:32:12Z",
+    "gitRevision": "d49d93ba1e43",
+    "log": ".releaseops/maven.log"
+  },
+  "vulnerabilityScan": {
+    "status": "passed",
+    "tool": "docker.io/aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222",
+    "policy": "fail on fixable HIGH/CRITICAL; .trivyignore.yaml entries need a statement and an expiry date",
+    "critical": 0,
+    "high": 0,
+    "acceptedExceptions": 2,
+    "finishedAt": "2026-11-08T14:32:20Z",
+    "report": "reports/out/trivy-image.json"
+  },
+  "sbom": {
+    "status": "generated",
+    "format": "CycloneDX JSON",
+    "file": "reports/out/sbom.cdx.json",
+    "components": 146,
+    "finishedAt": "2026-11-08T14:32:20Z"
+  },
+  "argocd": {
+    "syncStatus": "Synced",
+    "healthStatus": "Healthy",
+    "revision": "1bc24f865f1ff4b8ceac0d6b2485af8f8cc8ec80",
+    "source": "http://git-mirror.gitops-mirror.svc.cluster.local:8080/releaseops.git",
+    "targetRevision": "main",
+    "lastOperation": "Succeeded"
+  },
+  "kubernetesRollout": {
+    "image": "localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+    "desired": 2,
+    "available": 2,
+    "updated": 2,
+    "conditions": [
+      {
+        "type": "Available",
+        "status": "True",
+        "reason": "MinimumReplicasAvailable"
+      },
+      {
+        "type": "Progressing",
+        "status": "True",
+        "reason": "NewReplicaSetAvailable"
+      }
+    ]
+  },
+  "releaseVerification": {
+    "result": "passed",
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "checks": [
+      {
+        "name": "argocd.sync",
+        "status": "pass",
+        "detail": "Synced at revision f44a0ebd5329 (last operation: Succeeded)"
+      },
+      {
+        "name": "argocd.health",
+        "status": "pass",
+        "detail": "Healthy"
+      },
+      {
+        "name": "image.expected",
+        "status": "pass",
+        "detail": "Deployment and 2 running pod(s) pin sha256:73c121b088f3…"
+      },
+      {
+        "name": "k8s.rollout",
+        "status": "pass",
+        "detail": "rollout complete: 2/2 available, all updated (reason=NewReplicaSetAvailable)"
+      },
+      {
+        "name": "k8s.pods",
+        "status": "pass",
+        "detail": "2 app pod(s) and 1 MySQL pod Ready"
+      },
+      {
+        "name": "k8s.restarts",
+        "status": "pass",
+        "detail": "0 container restart(s) since the pods started"
+      },
+      {
+        "name": "app.health",
+        "status": "pass",
+        "detail": "status=UP db=UP (pod releaseops-b8d45cfcd-d8tsx)"
+      },
+      {
+        "name": "api.post",
+        "status": "pass",
+        "detail": "HTTP 200, created verify-20261108143230-27664 at /user?id=2"
+      },
+      {
+        "name": "api.get",
+        "status": "pass",
+        "detail": "GET /user?id=2 -> \"Greetings from Crewmeister, verify-20261108143230-27664!\""
+      },
+      {
+        "name": "db.persistence",
+        "status": "pass",
+        "detail": "row id=2 found directly in MySQL with name 'verify-20261108143230-27664' (persisted, not just echoed)"
+      },
+      {
+        "name": "db.migrations",
+        "status": "pass",
+        "detail": "1 successful Flyway migration(s) recorded"
+      },
+      {
+        "name": "monitoring.scrape",
+        "status": "pass",
+        "detail": "Prometheus scrapes 2/2 app targets; app_database_up=1"
+      }
+    ]
+  },
+  "failureInjection": {
+    "scenario": "bad-config",
+    "badRevision": "0541e823426456bd26ba599919dd5d3df3f6fbd3",
+    "secondsToDetectFailure": 66,
+    "badReleaseVerification": {
+      "result": "failed",
+      "summary": {
+        "passed": 8,
+        "failed": 3,
+        "skipped": 1
+      },
+      "failedChecks": [
+        {
+          "name": "argocd.health",
+          "detail": "health=Degraded:  Deployment Progressing=False (ProgressDeadlineExceeded)"
+        },
+        {
+          "name": "k8s.rollout",
+          "detail": "ProgressDeadlineExceeded: updated=1 available=2/2 total=3"
+        },
+        {
+          "name": "k8s.pods",
+          "detail": "pods not Ready: releaseops-7575fb7fd8-j6gv6"
+        }
+      ],
+      "likelyCause": "the application cannot connect to MySQL (connection refused / link failure)"
+    },
+    "serviceDuringBadRelease": {
+      "probe": "GET /user?id=1 every 0.5s from just before the bad commit until recovery was verified",
+      "requests": 316,
+      "http200": 316,
+      "notOk": 0,
+      "note": "maxUnavailable=0: the previous ReplicaSet keeps serving while the new pods are not Ready"
+    },
+    "prometheusAlert": {
+      "alert": "ReleaseOpsRolloutStuck",
+      "finalState": "firing",
+      "secondsWaited": 90
+    },
+    "driftSelfHeal": {
+      "change": "kubectl scale replicas 2 -> 3",
+      "outOfSyncObserved": true,
+      "selfHealed": true,
+      "secondsToHeal": 0
+    }
+  },
+  "recovery": {
+    "knownGoodRevision": "f44a0ebd5329e1576a2621b5fb14b474d621b925",
+    "revertRevision": "1bc24f865f1ff4b8ceac0d6b2485af8f8cc8ec80",
+    "secondsToRecover": 7,
+    "recoveryVerification": {
+      "result": "passed",
+      "summary": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 1
+      }
+    },
+    "dataSurvival": {
+      "canaryUser": "canary-143423",
+      "canaryLocation": "/user?id=4",
+      "readableAfterRecovery": true,
+      "mysqlPodUntouched": true
+    },
+    "overall": "passed"
+  }
+}

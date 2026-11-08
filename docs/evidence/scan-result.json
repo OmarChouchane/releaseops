@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "tool": "docker.io/aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222",
+  "policy": "fail on fixable HIGH/CRITICAL; .trivyignore.yaml entries need a statement and an expiry date",
+  "critical": 0,
+  "high": 0,
+  "acceptedExceptions": 2,
+  "finishedAt": "2026-11-08T14:32:20Z",
+  "report": "reports/out/trivy-image.json"
+}

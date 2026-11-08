@@ -1,0 +1,111 @@
+{
+  "label": "demo-recovery",
+  "result": "passed",
+  "finishedAt": "2026-11-08T14:37:07Z",
+  "workspaceRevision": "d49d93ba1e43",
+  "expectedImageDigest": "sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+  "expectedGitopsRevision": "1bc24f865f1ff4b8ceac0d6b2485af8f8cc8ec80",
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "skipped": 1
+  },
+  "argocd": {
+    "sync": "Synced",
+    "health": "Healthy",
+    "revision": "1bc24f865f1ff4b8ceac0d6b2485af8f8cc8ec80"
+  },
+  "deployment": {
+    "image": "localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+    "desired": 2,
+    "available": 2
+  },
+  "checks": [
+    {
+      "name": "argocd.sync",
+      "description": "Argo CD Application is Synced to the expected revision",
+      "status": "pass",
+      "detail": "Synced at revision 1bc24f865f1f (last operation: Succeeded)",
+      "durationSeconds": 3
+    },
+    {
+      "name": "argocd.health",
+      "description": "Argo CD reports the Application Healthy",
+      "status": "pass",
+      "detail": "Healthy",
+      "durationSeconds": 0
+    },
+    {
+      "name": "image.expected",
+      "description": "Deployment and running pods use the expected digest",
+      "status": "pass",
+      "detail": "Deployment and 2 running pod(s) pin sha256:73c121b088f3…",
+      "durationSeconds": 1
+    },
+    {
+      "name": "k8s.rollout",
+      "description": "Deployment rollout completed (updated = available = desired)",
+      "status": "pass",
+      "detail": "rollout complete: 2/2 available, all updated (reason=NewReplicaSetAvailable)",
+      "durationSeconds": 0
+    },
+    {
+      "name": "k8s.pods",
+      "description": "All application pods and MySQL are Ready",
+      "status": "pass",
+      "detail": "2 app pod(s) and 1 MySQL pod Ready",
+      "durationSeconds": 0
+    },
+    {
+      "name": "k8s.restarts",
+      "description": "No restart loop",
+      "status": "pass",
+      "detail": "0 container restart(s) since the pods started",
+      "durationSeconds": 1
+    },
+    {
+      "name": "app.health",
+      "description": "Actuator health UP, including the database component",
+      "status": "pass",
+      "detail": "status=UP db=UP (pod releaseops-b8d45cfcd-d8tsx)",
+      "durationSeconds": 0
+    },
+    {
+      "name": "api.post",
+      "description": "POST /user creates a user (200, greeting, Location)",
+      "status": "pass",
+      "detail": "HTTP 200, created verify-20261108143701-19033 at /user?id=6",
+      "durationSeconds": 0
+    },
+    {
+      "name": "api.get",
+      "description": "GET /user?id=<new id> returns the created user",
+      "status": "pass",
+      "detail": "GET /user?id=6 -> \"Greetings from Crewmeister, verify-20261108143701-19033!\"",
+      "durationSeconds": 0
+    },
+    {
+      "name": "db.persistence",
+      "description": "The created row exists in MySQL (queried directly)",
+      "status": "pass",
+      "detail": "row id=6 found directly in MySQL with name 'verify-20261108143701-19033' (persisted, not just echoed)",
+      "durationSeconds": 0
+    },
+    {
+      "name": "db.migrations",
+      "description": "Flyway migrations applied successfully",
+      "status": "pass",
+      "detail": "1 successful Flyway migration(s) recorded",
+      "durationSeconds": 1
+    },
+    {
+      "name": "monitoring.scrape",
+      "description": "Prometheus scrapes every replica; app_database_up=1",
+      "status": "skipped",
+      "detail": "disabled (--no-monitoring)",
+      "durationSeconds": 0
+    }
+  ],
+  "likelyCause": null,
+  "diagnostics": null
+}

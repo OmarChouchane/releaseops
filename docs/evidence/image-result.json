@@ -1,0 +1,10 @@
+{
+  "repository": "localhost:5001/releaseops/app",
+  "tag": "d49d93ba1e43-dirty-20261108143220",
+  "digest": "sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+  "reference": "localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+  "gitRevision": "d49d93ba1e43",
+  "publishedAt": "2026-11-08T14:32:26Z",
+  "registry": "local (kind) registry",
+  "gitopsCommit": "f44a0ebd5329e1576a2621b5fb14b474d621b925"
+}

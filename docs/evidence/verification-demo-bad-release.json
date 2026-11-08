@@ -1,0 +1,111 @@
+{
+  "label": "demo-bad-release",
+  "result": "failed",
+  "finishedAt": "2026-11-08T14:35:30Z",
+  "workspaceRevision": "d49d93ba1e43",
+  "expectedImageDigest": "sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+  "expectedGitopsRevision": "0541e823426456bd26ba599919dd5d3df3f6fbd3",
+  "summary": {
+    "passed": 8,
+    "failed": 3,
+    "skipped": 1
+  },
+  "argocd": {
+    "sync": "Synced",
+    "health": "Degraded",
+    "revision": "0541e823426456bd26ba599919dd5d3df3f6fbd3"
+  },
+  "deployment": {
+    "image": "localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c",
+    "desired": 2,
+    "available": 2
+  },
+  "checks": [
+    {
+      "name": "argocd.sync",
+      "description": "Argo CD Application is Synced to the expected revision",
+      "status": "pass",
+      "detail": "Synced at revision 0541e8234264 (last operation: Succeeded)",
+      "durationSeconds": 4
+    },
+    {
+      "name": "argocd.health",
+      "description": "Argo CD reports the Application Healthy",
+      "status": "fail",
+      "detail": "health=Degraded:  Deployment Progressing=False (ProgressDeadlineExceeded)",
+      "durationSeconds": 58
+    },
+    {
+      "name": "image.expected",
+      "description": "Deployment and running pods use the expected digest",
+      "status": "pass",
+      "detail": "Deployment and 3 running pod(s) pin sha256:73c121b088f3…",
+      "durationSeconds": 0
+    },
+    {
+      "name": "k8s.rollout",
+      "description": "Deployment rollout completed (updated = available = desired)",
+      "status": "fail",
+      "detail": "ProgressDeadlineExceeded: updated=1 available=2/2 total=3",
+      "durationSeconds": 1
+    },
+    {
+      "name": "k8s.pods",
+      "description": "All application pods and MySQL are Ready",
+      "status": "fail",
+      "detail": "pods not Ready: releaseops-7575fb7fd8-j6gv6",
+      "durationSeconds": 0
+    },
+    {
+      "name": "k8s.restarts",
+      "description": "No restart loop",
+      "status": "pass",
+      "detail": "0 container restart(s) since the pods started",
+      "durationSeconds": 0
+    },
+    {
+      "name": "app.health",
+      "description": "Actuator health UP, including the database component",
+      "status": "pass",
+      "detail": "status=UP db=UP (pod releaseops-b8d45cfcd-d8tsx)",
+      "durationSeconds": 0
+    },
+    {
+      "name": "api.post",
+      "description": "POST /user creates a user (200, greeting, Location)",
+      "status": "pass",
+      "detail": "HTTP 200, created verify-20261108143424-18995 at /user?id=5",
+      "durationSeconds": 0
+    },
+    {
+      "name": "api.get",
+      "description": "GET /user?id=<new id> returns the created user",
+      "status": "pass",
+      "detail": "GET /user?id=5 -> \"Greetings from Crewmeister, verify-20261108143424-18995!\"",
+      "durationSeconds": 0
+    },
+    {
+      "name": "db.persistence",
+      "description": "The created row exists in MySQL (queried directly)",
+      "status": "pass",
+      "detail": "row id=5 found directly in MySQL with name 'verify-20261108143424-18995' (persisted, not just echoed)",
+      "durationSeconds": 0
+    },
+    {
+      "name": "db.migrations",
+      "description": "Flyway migrations applied successfully",
+      "status": "pass",
+      "detail": "1 successful Flyway migration(s) recorded",
+      "durationSeconds": 0
+    },
+    {
+      "name": "monitoring.scrape",
+      "description": "Prometheus scrapes every replica; app_database_up=1",
+      "status": "skipped",
+      "detail": "disabled (--no-monitoring)",
+      "durationSeconds": 0
+    }
+  ],
+  "likelyCause": "the application cannot connect to MySQL (connection refused / link failure)",
+  "diagnostics": "### Argo CD application\nsync=Synced health=Degraded revision=0541e823426456bd26ba599919dd5d3df3f6fbd3\noperation Succeeded: successfully synced (all tasks run)\n\n### Deployment\nAvailable=True reason=MinimumReplicasAvailable: Deployment has minimum availability.\nProgressing=False reason=ProgressDeadlineExceeded: ReplicaSet \"releaseops-7575fb7fd8\" has timed out progressing.\n\n### Pods\nNAME                          READY   STATUS    RESTARTS   AGE     IP            NODE                       NOMINATED NODE   READINESS GATES\nreleaseops-7575fb7fd8-j6gv6   0/1     Running   0          64s     10.244.0.21   releaseops-control-plane   <none>           <none>\nreleaseops-b8d45cfcd-d8tsx    1/1     Running   0          2m59s   10.244.0.17   releaseops-control-plane   <none>           <none>\nreleaseops-b8d45cfcd-sm54d    1/1     Running   0          2m59s   10.244.0.16   releaseops-control-plane   <none>           <none>\nreleaseops-mysql-0            1/1     Running   0          2m59s   10.244.0.19   releaseops-control-plane   <none>           <none>\n\n### releaseops-7575fb7fd8-j6gv6: container state\nwaiting=- lastTerminated=- exitCode=- restarts=0\n### releaseops-7575fb7fd8-j6gv6: events\nLAST SEEN   TYPE      REASON      OBJECT                            MESSAGE\n63s         Normal    Scheduled   pod/releaseops-7575fb7fd8-j6gv6   Successfully assigned releaseops/releaseops-7575fb7fd8-j6gv6 to releaseops-control-plane\n63s         Normal    Pulled      pod/releaseops-7575fb7fd8-j6gv6   Container image \"localhost:5001/releaseops/app@sha256:73c121b088f30a2b171a6184b9218fb7f88fac22a95fa8a9b3bdbb199de06b6c\" already present on machine and can be accessed by the pod\n63s         Normal    Created     pod/releaseops-7575fb7fd8-j6gv6   Container created\n63s         Normal    Started     pod/releaseops-7575fb7fd8-j6gv6   Container started\n3s          Warning   Unhealthy   pod/releaseops-7575fb7fd8-j6gv6   Startup probe failed: Get \"http://10.244.0.21:8081/actuator/health/liveness\": dial tcp 10.244.0.21:8081: connect: connection refused\n### releaseops-7575fb7fd8-j6gv6: application log (errors)\n(Caused by releaseops-mysql-typo)\n(Caused by releaseops-mysql-typo: Name does not resolve)\n2026-11-08T14:34:32.183Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:33.184Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:35.186Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:39.187Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:46.065Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure\n2026-11-08T14:34:51.067Z  WARN 1 --- [app] [           main] o.flywaydb.core.internal.jdbc.JdbcUtils  : Connection error: Communications link failure"
+}
