@@ -22,5 +22,5 @@ machines", with free tooling. There is no cloud budget, and a reviewer must be a
   accordingly.
 
 ## Not claimed
-This is not Crewmeister's infrastructure (which the author understands to be ECS-based). It is an independent
+This is not Crewmeister's infrastructure (which runs on AWS). It is an independent
 implementation of the Kubernetes variant of the challenge.
