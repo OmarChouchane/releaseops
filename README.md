@@ -429,6 +429,27 @@ Running the documented one-liner from zero exposed these; none showed up when te
 6. Verification probed the API endpoint before waiting for readiness, so on a first boot it measured "pods not up yet".
 7. After a *second* release of identical source, the image check failed falsely: the runtime reported the previous index digest for the same platform image (rebuilds get new provenance metadata, so the index digest changes while the image does not). The check now requires every live pod to be created from the expected digest **and** the runtime image to be that digest or provably the same platform image (verified against the registry); a wrong digest still fails (tested).
 
+### Second check: a fresh clone from GitHub
+
+After publishing, the repository was cloned again into a new directory in WSL (commit `b9ce86a`) and run on a slow
+connection (12 Nov 2026). What that proved, and what it did not:
+
+* **Proved** — the clone keeps the executable bits; Terraform created the cluster, Argo CD and the monitoring stack;
+  the 15 tests passed on the clean checkout; the image built (122 MB); Argo CD deployed the public GHCR image from
+  release PR #6 (`sha256:1c570c57…`); and `./run.sh demo` passed **twice** on that cluster:
+
+  | Demo run | Detected | Alert `ReleaseOpsRolloutStuck` | Recovered after `git revert` | Requests | Data |
+  |---|---|---|---|---|---|
+  | 1 | 68 s | FIRING | 7 s | 341 / 341 returned 200 | canary kept, MySQL pod untouched |
+  | 2 | 68 s | FIRING (172 s into the demo) | 7 s | 334 / 334 returned 200 | canary kept, MySQL pod untouched |
+
+* **Not completed there** — a full `./run.sh up` from that clone did not run to its end: the Trivy vulnerability
+  database download was too slow on that connection, so the scan, the push to the local registry and the final
+  12-check verification were not reached in that clone. The 12/12 result above (806 s) comes from the earlier run.
+* **Bugs this check found and fixed** — the release step stopped silently on a *clean* git checkout (it only worked on
+  a working copy with uncommitted changes); Grafana was killed for running out of memory at a 384 Mi limit (now
+  768 Mi); and on a very slow connection the 15-minute Helm timeout can expire (re-running `./run.sh up` recovers).
+
 ---
 
 ## 19. Known limitations
