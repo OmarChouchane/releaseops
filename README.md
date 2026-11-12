@@ -39,6 +39,18 @@ Then: `./run.sh demo` (bad release + Git rollback) and `./run.sh status`.
 | 4 | Open Grafana `http://localhost:13000` → *ReleaseOps – application and release health* | Replica/readiness dip during the demo, request rate, JVM, DB up |
 | 5 | Read `reports/out/release-report.md` | One page of evidence: digest, tests, scan, SBOM, Argo state, every verification check |
 
+**Argo CD** — the `releaseops` application is Synced and Healthy, deployed from the GitOps source:
+
+![Argo CD showing the releaseops application Synced and Healthy](docs/img/argocd-synced.png)
+
+**Grafana** — the ReleaseOps dashboard: replicas, database, traffic, latency, JVM and connection pool:
+
+![Grafana ReleaseOps dashboard](docs/img/grafana-dashboard.png)
+
+**Demo result** — a bad release is detected, rolled back with `git revert`, and no data is lost:
+
+![Terminal showing DEMO COMPLETE](docs/img/demo-complete.png)
+
 ---
 
 ## 2. Architecture
@@ -184,7 +196,7 @@ Run the app without Kubernetes: start a MySQL, then `./mvnw spring-boot:run` (de
 
 ## 7. Access
 
-`./run.sh status` prints the URLs **and** the generated passwords.
+`./run.sh status` prints the URLs **and** the generated passwords. The Argo CD and Grafana passwords are generated per local cluster and are throwaway.
 
 | What | URL | Login |
 |---|---|---|
