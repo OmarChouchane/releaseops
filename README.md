@@ -11,8 +11,8 @@ a release really works, shows what happens when a release is **bad**, and recove
 
 > **Honesty box.** Everything under *Actual results* was produced by running the commands in this repository on the
 > author's machine. Things that were **not** run are listed under [Known limitations](#known-limitations) — notably
-> the AWS/EKS code (validated offline only), the GitHub Actions workflows (written and statically checked, but not yet
-> executed on GitHub because the repository was not published), and `GITOPS_MODE=remote` against a real GitHub repo.
+> the AWS/EKS code (validated offline only) and `GITOPS_MODE=remote` (Argo CD deploying the published GHCR image from
+> GitHub). The GitHub Actions `ci` workflow has run on GitHub and is green.
 
 ---
 
@@ -360,7 +360,7 @@ GITOPS_MODE=remote GITOPS_REPO_URL=https://github.com/<you>/<repo>.git ./run.sh 
   Make the GHCR package public (or add an image pull secret) so the kind node can pull it.
 * `./run.sh demo` in remote mode pushes the bad commit and its revert to `GITOPS_BRANCH`; it refuses unless you set `DEMO_ALLOW_PUSH=1` — use a throw-away branch (`GITOPS_BRANCH=demo`).
 
-> **Not yet executed:** this path (and the GitHub Actions workflows) could not be run because the repository was not published. See §19.
+> **Not yet executed:** remote mode itself (Argo CD deploying from GitHub). The GitHub Actions `ci` workflow has run and is green. See §19.
 
 ---
 
