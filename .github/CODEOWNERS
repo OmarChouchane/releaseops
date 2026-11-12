@@ -1,0 +1,5 @@
+# Every path needs a review from the owner. Narrow these as the team grows.
+*                         @OmarChouchane
+/infra/                   @OmarChouchane
+/deploy/                  @OmarChouchane
+/.github/                 @OmarChouchane
