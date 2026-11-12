@@ -90,7 +90,7 @@ flowchart LR
 | Layer | Created by | Notes |
 |---|---|---|
 | kind cluster + local registry | `scripts/cluster.sh` | Stage 0, outside Terraform on purpose (provider cycle) |
-| Namespaces, DB Secret, Argo CD, Application/AppProject, kube-prometheus-stack, git mirror | **Terraform** (`infra/terraform/local`) | Static kubeconfig + pinned context |
+| Namespaces, DB Secret, Argo CD, Application/AppProject, kube-prometheus-stack, git mirror | **Terraform** (`infra/terraform/environments/local`) | Static kubeconfig + pinned context |
 | Everything the Helm chart renders in `releaseops` | **Argo CD** | Terraform never touches it |
 | Image digest in `values.yaml` | CI release PR (remote) / `./run.sh deploy` (local) | Never edited by hand |
 
@@ -118,8 +118,8 @@ pom.xml, src/                      the original app (+ tests, Prometheus registr
 deploy/helm/releaseops/            the chart: app, MySQL, probes, NetworkPolicy, PodMonitor, alerts, dashboard
 deploy/environments/local/         values Argo CD applies (image digest lives here)
 deploy/environments/aws/           same chart, AWS settings (unprovisioned)
-infra/terraform/local/             Terraform for the kind cluster (+ modules/*)
-infra/terraform/aws/               OPTIONAL EKS/ECR/OIDC — validated offline, never applied
+infra/terraform/environments/local/             Terraform for the kind cluster (+ modules/*)
+infra/terraform/environments/aws/               OPTIONAL EKS/ECR/OIDC — validated offline, never applied
 scripts/                           cluster, infra, release, verify, demo, report, doctor, status, monitor-check
 .github/workflows/                 ci.yml (+ manual aws-plan.yml), dependabot.yml
 docs/adr/                          architecture decision records
@@ -309,7 +309,7 @@ Grafana imported the dashboard.
 
 ## 14. Optional: AWS (EKS)
 
-[`infra/terraform/aws`](infra/terraform/aws/README.md): VPC (no NAT by default), EKS 1.36, managed nodes, EBS CSI via Pod
+[`infra/terraform/environments/aws`](infra/terraform/environments/aws/README.md): VPC (no NAT by default), EKS 1.36, managed nodes, EBS CSI via Pod
 Identity, ECR with immutable tags, optional GitHub-OIDC role. The same chart is used with
 `deploy/environments/aws/values.yaml`. **Validated offline only (`terraform init -backend=false`, `validate`, `fmt`);
 never planned or applied against AWS.** Treat it as reviewed-but-unproven.

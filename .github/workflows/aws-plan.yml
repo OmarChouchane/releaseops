@@ -1,6 +1,6 @@
 name: aws-plan (optional, manual)
 
-# Optional, manual: terraform plan only (never apply) via GitHub OIDC. Setup: infra/terraform/aws/README.md
+# Optional, manual: terraform plan only (never apply) via GitHub OIDC. Setup: infra/terraform/environments/aws/README.md
 
 on:
   workflow_dispatch:
@@ -28,5 +28,5 @@ jobs:
           aws-region: ${{ vars.AWS_REGION || 'eu-central-1' }}
           role-session-name: releaseops-plan
       - run: |
-          terraform -chdir=infra/terraform/aws init -input=false
-          terraform -chdir=infra/terraform/aws plan -input=false -lock=false
+          terraform -chdir=infra/terraform/environments/aws init -input=false
+          terraform -chdir=infra/terraform/environments/aws plan -input=false -lock=false

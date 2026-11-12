@@ -73,10 +73,10 @@ jobs:
           D=sha256:0000000000000000000000000000000000000000000000000000000000000000
           helm lint deploy/helm/releaseops -f deploy/environments/local/values.yaml --set image.digest=$D --strict
           helm template releaseops deploy/helm/releaseops -n releaseops -f deploy/environments/local/values.yaml --set image.digest=$D > /dev/null
-          helm lint infra/terraform/local/modules/argocd/chart --strict
+          helm lint infra/terraform/modules/argocd/chart --strict
       - name: terraform fmt + validate (local and AWS; no credentials, no apply)
         run: |
-          for d in infra/terraform/local infra/terraform/aws; do
+          for d in infra/terraform/environments/local infra/terraform/environments/aws; do
             terraform -chdir=$d fmt -check -recursive
             terraform -chdir=$d init -backend=false -input=false
             terraform -chdir=$d validate

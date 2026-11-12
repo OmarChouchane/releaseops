@@ -99,7 +99,7 @@ cmd_validate() {
   local dig="sha256:0000000000000000000000000000000000000000000000000000000000000000"
   helm lint "$CHART_DIR" -f "$ROOT/$ENV_VALUES_REL" --set image.digest="$dig" --strict
   helm template "$APP_NAME" "$CHART_DIR" -n "$NS_APP" -f "$ROOT/$ENV_VALUES_REL" --set image.digest="$dig" >/dev/null && ok "chart renders"
-  helm lint "$ROOT/infra/terraform/local/modules/argocd/chart" --strict >/dev/null && ok "gitops-bootstrap chart lints"
+  helm lint "$ROOT/infra/terraform/modules/argocd/chart" --strict >/dev/null && ok "gitops-bootstrap chart lints"
   "$S/infra.sh" validate
   step "shell syntax"
   local f; for f in "$ROOT"/run.sh "$S"/*.sh "$S"/lib/*.sh "$S"/git-mirror/entrypoint.sh; do bash -n "$f" || die "syntax error in $f"; done; ok "all scripts parse"

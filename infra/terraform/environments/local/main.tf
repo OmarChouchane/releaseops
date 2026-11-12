@@ -12,7 +12,7 @@ locals {
 # ---------------------------------------------------------------------------------------------
 
 module "namespaces" {
-  source = "./modules/namespaces"
+  source = "../../modules/namespaces"
   namespaces = {
     (var.app_namespace)        = { enforce = "restricted" }
     (var.argocd_namespace)     = { enforce = "baseline" }
@@ -21,20 +21,20 @@ module "namespaces" {
 }
 
 module "app_secret" {
-  source    = "./modules/app-secret"
+  source    = "../../modules/app-secret"
   namespace = module.namespaces.names[var.app_namespace]
   name      = "${var.app_name}-db"
 }
 
 module "git_mirror" {
-  source    = "./modules/git-mirror"
+  source    = "../../modules/git-mirror"
   count     = var.gitops_mode == "local" ? 1 : 0
   namespace = local.git_mirror_namespace
   image     = var.git_mirror_image
 }
 
 module "argocd" {
-  source = "./modules/argocd"
+  source = "../../modules/argocd"
 
   namespace     = module.namespaces.names[var.argocd_namespace]
   chart_version = var.argocd_chart_version
@@ -52,7 +52,7 @@ module "argocd" {
 }
 
 module "monitoring" {
-  source = "./modules/monitoring"
+  source = "../../modules/monitoring"
 
   namespace            = module.namespaces.names[var.monitoring_namespace]
   chart_version        = var.kube_prometheus_stack_chart_version

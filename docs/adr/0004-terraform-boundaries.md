@@ -13,7 +13,7 @@ be both created by Terraform *and* used by that Terraform's kubernetes/helm prov
 cycles, so it is created first and Terraform connects to it by a static kubeconfig path + pinned context
 (`kind-releaseops`; it can not act on any other cluster).
 
-**Stages 1–4 – one Terraform root** (`infra/terraform/local`) with small modules:
+**Stages 1–4 – one Terraform root** (`infra/terraform/environments/local`) with small modules:
 
 | Module | Owns |
 |---|---|

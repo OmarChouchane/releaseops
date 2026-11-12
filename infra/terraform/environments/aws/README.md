@@ -21,7 +21,7 @@ and not measured here.
 
 ## Use
 ```bash
-cd infra/terraform/aws
+cd infra/terraform/environments/aws
 terraform init
 terraform plan  -var 'api_allowed_cidrs=["<your-ip>/32"]'      # review!
 terraform apply -var 'api_allowed_cidrs=["<your-ip>/32"]'      # only when you accept the cost

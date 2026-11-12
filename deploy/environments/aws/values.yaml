@@ -1,4 +1,4 @@
-# Same chart as local with AWS settings. Unprovisioned/untested: see infra/terraform/aws/README.md
+# Same chart as local with AWS settings. Unprovisioned/untested: see infra/terraform/environments/aws/README.md
 
 replicaCount: 2
 

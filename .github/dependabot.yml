@@ -21,8 +21,8 @@ updates:
       - dependency-name: "eclipse-temurin"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: terraform
-    directory: /infra/terraform/local
+    directory: /infra/terraform/environments/local
     schedule: { interval: weekly }
   - package-ecosystem: terraform
-    directory: /infra/terraform/aws
+    directory: /infra/terraform/environments/aws
     schedule: { interval: weekly }

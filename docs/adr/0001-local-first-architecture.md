@@ -10,7 +10,7 @@ machines", with free tooling. There is no cloud budget, and a reviewer must be a
 * The **source of truth is a local kind cluster** (one node, Kubernetes 1.36) on Docker, driven by one command.
 * kind rather than minikube/k3d: it is what Kubernetes' own CI uses, node images are digest-pinned, and
   port mappings give stable `localhost` URLs without tunnels.
-* An **optional EKS configuration** (`infra/terraform/aws`) shows how the same chart moves to a managed cluster. It
+* An **optional EKS configuration** (`infra/terraform/environments/aws`) shows how the same chart moves to a managed cluster. It
   is validated offline (`terraform validate`, `fmt`) and **never applied**; every document that mentions it says so.
 * Nothing in the local path needs AWS credentials, a paid service or a public IP.
 
