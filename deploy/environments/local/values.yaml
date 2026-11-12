@@ -5,7 +5,7 @@ replicaCount: 2
 
 image:
   repository: ghcr.io/omarchouchane/releaseops-app
-  digest: sha256:1c570c57df379fc65ef521b479c9f0041b944c50930c6686ffe4e2abef3817c9
+  digest: sha256:1dae26247b6aab7e05c6accce2c7bc18bad684336a399300783c04c732401759
 
 service:
   type: NodePort
