@@ -1,4 +1,4 @@
-# Throw-away smart-HTTP git server for the LOCAL GitOps demo only (see docs/adr/0005-gitops-source.md).
+# Throw-away git server for the local GitOps demo (docs/adr/0005-gitops-source-and-release-flow.md)
 # Unauthenticated by design: it is reachable only inside the kind cluster and via kubectl port-forward.
 FROM alpine:3.22@sha256:bfe7ceb9f09ec0566c48fb93356e45a47a00be5a1dd14fa5b909e7709c66b034
 

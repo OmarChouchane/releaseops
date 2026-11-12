@@ -7,20 +7,18 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/challenge?createDatabaseIfNotExist=true}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      # Fail fast: metric scrapes and readiness checks must not hang for Hikari's 30s default.
+      # Fail fast: no 30s Hikari hang for scrapes and readiness
       connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
   flyway:
     url: ${SPRING_DATASOURCE_WRITER_URL:jdbc:mysql://localhost:3306/challenge?createDatabaseIfNotExist=true}
     user: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:dev}
     enabled: true
-    # MySQL and the app usually start together; wait for the database instead of crashing.
-    # (~2.5 min of backoff: 1s,2s,4s then 5s steps - MySQL needs ~90s to initialise a fresh data
-    # directory; the Kubernetes startupProbe allows 180s.) Anything longer is a real failure.
+    # Wait for MySQL instead of crashing (~2.5 min backoff; a fresh volume needs ~90s)
     connect-retries: ${FLYWAY_CONNECT_RETRIES:30}
     connect-retries-interval: ${FLYWAY_CONNECT_RETRIES_INTERVAL:5s}
   lifecycle:
-    # Upper bound for in-flight requests to finish during SIGTERM.
+    # Upper bound for in-flight requests during SIGTERM
     timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:25s}
 
 server:
@@ -28,9 +26,7 @@ server:
   shutdown: graceful
 
 management:
-  # By default the management endpoints stay on the application port (the original behaviour).
-  # In Kubernetes the chart sets MANAGEMENT_SERVER_PORT=8081 so actuator is not reachable
-  # through the public Service.
+  # Management endpoints stay on the app port; the chart sets MANAGEMENT_SERVER_PORT=8081
   server:
     port: ${MANAGEMENT_SERVER_PORT:}
   endpoints:
@@ -42,7 +38,7 @@ management:
       # Enables /actuator/health/liveness and /actuator/health/readiness
       probes:
         enabled: true
-      # Show component *names and status* (e.g. db: UP) but never connection details.
+      # Show component names and status, never connection details
       show-components: always
       show-details: never
       group:

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Git side of the GitOps loop. Works for both sources:
-#   GITOPS_MODE=local  -> a git mirror running in the cluster (pushed to via port-forward)
-#   GITOPS_MODE=remote -> your own repository (pushes need your credentials; used by `demo`)
+# Git side of the GitOps loop (local mirror or your own remote repo).
 # shellcheck shell=bash
 
 # shellcheck source=common.sh
@@ -32,7 +30,7 @@ mirror_build_push() {
 pf_stop() {
   [[ -f "$PF_PIDFILE" ]] && kill "$(cat "$PF_PIDFILE")" 2>/dev/null || true
   rm -f "$PF_PIDFILE"
-  # Also stop any port-forward of OURS left behind by an earlier crashed run (matched by our context + service).
+  # Stop port-forwards of ours left by a crashed run
   pkill -f "context ${KIND_CONTEXT} .*port-forward svc/git-mirror" 2>/dev/null || true
   local _; for _ in 1 2 3 4 5 6 7 8 9 10; do port_in_use "$GITOPS_GIT_PORT" || return 0; sleep 0.5; done
   return 0
@@ -42,13 +40,13 @@ pf_stop() {
 pf_start() {
   pf_stop
   port_in_use "$GITOPS_GIT_PORT" && die "port $GITOPS_GIT_PORT busy (set GITOPS_GIT_PORT)"
-  # kubectl directly (not the k() wrapper): $! must be the real kubectl PID, otherwise stopping it orphans the process.
+  # call kubectl directly so $! is its real PID
   kubectl --context "$KIND_CONTEXT" -n "$MIRROR_NS" port-forward svc/git-mirror "${GITOPS_GIT_PORT}:8080" >"$STATE_DIR/git-portforward.log" 2>&1 &
   echo $! >"$PF_PIDFILE"
   wait_for "git mirror reachable" 30 curl -fs "http://127.0.0.1:${GITOPS_GIT_PORT}/healthz" || die "git mirror not reachable (see $STATE_DIR/git-portforward.log)"
 }
 
-# The URL the HOST pushes to / clones from.
+# URL the host pushes to / clones from
 host_remote_url() {
   if [[ "$GITOPS_MODE" == "local" ]]; then echo "http://127.0.0.1:${GITOPS_GIT_PORT}/releaseops.git"
   else [[ -n "$GITOPS_REPO_URL" ]] || die "GITOPS_REPO_URL is required for GITOPS_MODE=remote"; echo "$GITOPS_REPO_URL"; fi
@@ -65,7 +63,7 @@ ensure_workclone() {
   else
     git -C "$WORKCLONE" remote set-url origin "$url"
   fi
-  # Adopt whatever the remote has (the remote is the source of truth, not the clone).
+  # The remote is the source of truth, not the clone
   if git -C "$WORKCLONE" ls-remote --exit-code --heads origin "$GITOPS_BRANCH" >/dev/null 2>&1; then
     git -C "$WORKCLONE" fetch -q origin "$GITOPS_BRANCH"
     git -C "$WORKCLONE" checkout -q -B "$GITOPS_BRANCH" "origin/$GITOPS_BRANCH"
@@ -94,14 +92,12 @@ values_set_image() { # values_set_image <repository> <digest>
 }
 
 # ----------------------------------------------------------------------------- seed from workspace
-# Copy the tracked + untracked (not ignored) files of the workspace into the work clone and commit.
-# Exception: the image pin in the environment values file belongs to the release process and is
-# preserved from the remote, so re-seeding never rolls back a release.
+# Copy workspace files into the work clone and commit; the image pin stays as on the remote.
 seed_from_workspace() {
   local keep_repo="" keep_digest="" f
   [[ -f "$WORKCLONE/$ENV_VALUES_REL" ]] && { keep_repo="$(values_get repository)"; keep_digest="$(values_get digest)"; }
 
-  # Remove files that disappeared from the workspace, then copy the current set.
+  # Drop files removed from the workspace, then copy the current ones
   (cd "$WORKCLONE" && git ls-files -z | xargs -0 -r rm -f)
   while IFS= read -r -d '' f; do
     [[ -f "$ROOT/$f" ]] || continue   # staged-but-deleted files

@@ -16,7 +16,7 @@ tf_env() {
   export TF_VAR_app_name="$APP_NAME" TF_VAR_environment="$ENV_NAME"
   export TF_VAR_gitops_mode="$GITOPS_MODE" TF_VAR_gitops_repo_url="$GITOPS_REPO_URL" TF_VAR_gitops_revision="$GITOPS_BRANCH"
   TF_VAR_git_mirror_image="$(mirror_image_ref)"; export TF_VAR_git_mirror_image
-  # Private remote repositories only (read-only credentials). Passed via env so they never hit a file.
+  # Private remote repos only: read-only credentials via env, never a file
   [[ -n "${GITOPS_REPO_USERNAME:-}" ]] && export TF_VAR_gitops_repo_username="$GITOPS_REPO_USERNAME"
   [[ -n "${GITOPS_REPO_TOKEN:-}" ]] && export TF_VAR_gitops_repo_password="$GITOPS_REPO_TOKEN"
   true
@@ -45,7 +45,7 @@ cmd_apply() {
 
 cmd_destroy() {
   need terraform; tf_env; tf_init
-  # Argo CD would otherwise self-heal resources while Terraform is removing them.
+  # Argo CD would self-heal resources while Terraform removes them
   k -n "$NS_ARGOCD" delete application "$APP_NAME" --ignore-not-found --wait=false >/dev/null 2>&1 || true
   tf destroy -input=false -auto-approve -no-color
 }

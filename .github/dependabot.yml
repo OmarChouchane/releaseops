@@ -1,10 +1,10 @@
 version: 2
 updates:
-  # Actions are pinned by commit SHA; Dependabot proposes the new SHA + tag comment.
+  # Actions are pinned by SHA; Dependabot proposes the new SHA
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
-  # Major bumps (e.g. Spring Boot 4) are a planned migration, not an automatic PR.
+  # Major bumps (e.g. Spring Boot 4) are planned migrations, not automatic PRs
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
@@ -12,8 +12,7 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-  # Updates the digest-pinned base images in the Dockerfile.
-  # The app targets Java 17 (LTS): do not jump to another Java major automatically.
+  # Updates digest-pinned base images (stay on Java 17 LTS)
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }

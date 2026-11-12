@@ -14,10 +14,8 @@ variable "image" {
   }
 }
 
-# A throw-away, unauthenticated smart-HTTP git server that lives ONLY inside the local kind cluster.
-# Why it exists: the demo has to make real commits (bad release, revert) that Argo CD reads back, and
-# that must work before the repository is published - and never write to anybody's GitHub.
-# It is not exposed outside the cluster; the host reaches it through `kubectl port-forward`.
+# Throw-away git server inside the kind cluster only (not exposed outside)
+# Lets the demo make real commits for Argo CD without touching GitHub
 resource "kubernetes_namespace_v1" "this" {
   metadata {
     name = var.namespace
@@ -90,8 +88,7 @@ resource "kubernetes_deployment_v1" "git_mirror" {
             limits   = { memory = "128Mi" }
           }
           security_context {
-            # Set explicitly: the provider otherwise renders runAsNonRoot=false at container level,
-            # which the namespace's "restricted" Pod Security policy rejects.
+            # Set explicitly: otherwise runAsNonRoot=false is rendered and Pod Security rejects it
             run_as_non_root            = true
             run_as_user                = 10001
             allow_privilege_escalation = false

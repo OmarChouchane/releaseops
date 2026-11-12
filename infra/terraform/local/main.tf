@@ -5,16 +5,10 @@ locals {
 }
 
 # ---------------------------------------------------------------------------------------------
-# Ownership boundaries (see docs/adr/0004-terraform-boundaries.md)
-#
-#   Terraform owns : namespaces, the DB credentials Secret, Argo CD itself, the Argo CD
-#                    Application/AppProject objects (the "root" of GitOps), the monitoring
-#                    stack, and (local mode) the git mirror.
-#   Argo CD owns   : everything inside the `releaseops` namespace that comes from the Helm
-#                    chart (Deployment, StatefulSet, Services, ConfigMap, PodMonitor, ...).
-#
-# Terraform never renders the application chart, and Argo CD never touches the Secret or the
-# namespaces, so the two controllers can not fight over a resource.
+# Ownership boundaries (docs/adr/0004-terraform-boundaries.md)
+#  Terraform owns: namespaces, DB Secret, Argo CD, AppProject/Application, monitoring, git mirror
+#  Argo CD owns:   everything the app Helm chart renders in the releaseops namespace
+# So the two never fight over a resource.
 # ---------------------------------------------------------------------------------------------
 
 module "namespaces" {
@@ -53,7 +47,7 @@ module "argocd" {
   repo_username = var.gitops_repo_username
   repo_password = var.gitops_repo_password
 
-  # The git mirror must exist before Argo CD is asked to fetch from it.
+  # The git mirror must exist before Argo CD fetches from it
   depends_on = [module.git_mirror]
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Local equivalent of the CI pipeline: test -> build -> scan -> SBOM -> push (digest) -> pin in Git.
 # Subcommands: test | build | scan | sbom | publish | pin | all
-# Every step records what REALLY happened in .releaseops/*.json; reports are built from those files.
+# Each step records what really happened in .releaseops/*.json
 set -euo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -18,7 +18,7 @@ cmd_test() {
   step "maven tests (unit + Testcontainers/MySQL integration)"
   local start=$SECONDS rc=0
   (cd "$ROOT" && ./mvnw -B -ntp verify) >"$STATE_DIR/maven.log" 2>&1 || rc=$?
-  # Totals come from surefire's XML, not from scraping console output.
+  # Totals from surefire XML, not console output
   local t=0 f=0 e=0 s=0 x
   for x in "$ROOT"/target/surefire-reports/TEST-*.xml; do
     [[ -f "$x" ]] || continue

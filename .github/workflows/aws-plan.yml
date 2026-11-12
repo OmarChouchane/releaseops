@@ -1,8 +1,6 @@
 name: aws-plan (optional, manual)
 
-# OPTIONAL and UNPROVISIONED. Runs `terraform plan` (never apply) for the EKS configuration using
-# GitHub OIDC - no long-lived AWS keys exist anywhere. It does nothing unless you create the role and
-# set the repository variable AWS_ROLE_ARN (see infra/terraform/aws/README.md). Never triggered by PRs.
+# Optional, manual: terraform plan only (never apply) via GitHub OIDC. Setup: infra/terraform/aws/README.md
 
 on:
   workflow_dispatch:

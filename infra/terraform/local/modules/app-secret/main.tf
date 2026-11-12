@@ -8,7 +8,7 @@ terraform {
 variable "namespace" { type = string }
 variable "name" { type = string }
 
-# Alphanumeric only: the values end up in JDBC settings and shell probes.
+# Alphanumeric only: values end up in JDBC settings and shell probes
 resource "random_password" "mysql_root" {
   length  = 32
   special = false
@@ -29,7 +29,7 @@ resource "kubernetes_secret_v1" "db" {
     }
   }
   type = "Opaque"
-  # Key names are the contract with the Helm chart (templates/deployment.yaml, mysql.yaml).
+  # Key names are the contract with the Helm chart
   data = {
     "mysql-user"          = "app"
     "mysql-password"      = random_password.mysql_app.result

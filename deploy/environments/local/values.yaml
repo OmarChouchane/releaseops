@@ -1,6 +1,5 @@
-# Desired state of the "local" environment (kind). Argo CD reads this file from Git.
-# `image.*` is written by the release process (`./run.sh deploy` locally, the CI release PR
-# for GHCR images). Do not edit image.digest by hand.
+# Desired state of the local (kind) environment, read by Argo CD from Git.
+# image.* is written by the release process; do not edit image.digest by hand.
 
 replicaCount: 2
 
@@ -13,7 +12,7 @@ service:
   nodePort: 30080
 
 secret:
-  # Created by Terraform (infra/terraform/local) - the value never touches Git.
+  # Created by Terraform, never in Git
   existingSecret: releaseops-db
   create: false
 

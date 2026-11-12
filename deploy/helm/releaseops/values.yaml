@@ -1,13 +1,12 @@
-# Defaults are safe and environment-neutral. Environment specifics live in
-# deploy/environments/<env>/values.yaml (the files Argo CD reads).
+# Safe, environment-neutral defaults; environments: deploy/environments/<env>/values.yaml
 
 replicaCount: 2
 
 image:
   repository: ghcr.io/CHANGE_ME/releaseops-app
-  # Immutable reference. Written by CI (release PR) or by `./run.sh release` - never by hand.
+  # Immutable reference, written by CI or ./run.sh release, never by hand
   digest: ""
-  # Escape hatch for ad-hoc installs only; ignored when digest is set.
+  # Ad-hoc installs only; ignored when digest is set
   tag: ""
   pullPolicy: IfNotPresent
 
@@ -15,23 +14,22 @@ service:
   type: ClusterIP
   port: 8080
   nodePort: null
-  # Actuator is served here and is NOT part of the Service.
+  # Actuator is served here, not through the Service
   managementPort: 8081
 
 config:
   applicationName: app
   database:
     name: challenge
-    # Empty => the in-chart MySQL service. Set for an external database.
+    # Empty = in-chart MySQL; set for an external database
     host: ""
-  # Extra environment variables (ConfigMap). Used by the release-failure demo.
+  # Extra environment variables (ConfigMap)
   extra: {}
 
 secret:
-  # Name of a pre-existing Secret with keys: mysql-user, mysql-password, mysql-root-password.
-  # In the GitOps flow Terraform creates it. Empty => <release>-db (see create).
+  # Existing Secret with mysql-user, mysql-password, mysql-root-password (Terraform creates it)
   existingSecret: ""
-  # Standalone `helm install` convenience: generate random credentials (never in Git).
+  # helm install convenience: random credentials, never in Git
   create: true
   username: app
 
@@ -39,22 +37,22 @@ resources:
   requests: { cpu: 100m, memory: 384Mi }
   limits: { memory: 512Mi }
 
-# Rollout failure is surfaced after this many seconds without progress.
+# Rollout failure is reported after this many seconds without progress
 progressDeadlineSeconds: 180
 terminationGracePeriodSeconds: 40
 preStopSleepSeconds: 5
 
 probes:
-  # startupProbe period is 5s => 36 * 5 = 180s for JVM boot + Flyway (+ DB wait).
+  # startupProbe 36 x 5s = 180s for JVM boot + Flyway
   startupFailureThreshold: 36
 
 mysql:
   enabled: true
   image:
     repository: docker.io/library/mysql
-    # mysql:8.4 (LTS). Updated by Dependabot-style review, never "latest".
+    # mysql:8.4 LTS, never latest
     digest: sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
-  # Smaller memory footprint for laptops; remove for production sizing.
+  # Small memory footprint for laptops
   args: ["--mysqlx=OFF", "--performance-schema=OFF"]
   persistence:
     enabled: true
@@ -68,7 +66,7 @@ networkPolicy:
   enabled: true
 
 monitoring:
-  # Needs the Prometheus Operator CRDs (PodMonitor, PrometheusRule).
+  # Needs the Prometheus Operator CRDs
   enabled: true
   scrapeInterval: 15s
   alertFor: 2m

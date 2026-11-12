@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared configuration and helpers. Sourced by run.sh and every script; never executed directly.
+# Shared config and helpers, sourced by run.sh and all scripts.
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # configuration variables are consumed by the scripts that source this file
 
@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export ROOT
 
 # ---------------------------------------------------------------- configuration
-# Everything below can be overridden from the environment.
+# All values can be overridden from the environment
 : "${CLUSTER_NAME:=releaseops}"
 : "${REGISTRY_NAME:=releaseops-registry}"
 : "${REGISTRY_PORT:=5001}"
@@ -30,7 +30,7 @@ export ROOT
 : "${GITOPS_BRANCH:=main}"
 : "${GITOPS_GIT_PORT:=18082}"   # port-forward used by the host to push to the in-cluster mirror
 
-# Pinned tool and image versions (see docs/VERSIONS.md for sources and rationale).
+# Pinned versions (sources: docs/VERSIONS.md)
 KIND_VERSION="v0.33.0"
 KIND_NODE_IMAGE="kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
 KUBECTL_VERSION="v1.36.4"
@@ -50,7 +50,7 @@ KIND_CONTEXT="kind-${CLUSTER_NAME}"
 mkdir -p "$STATE_DIR" "$REPORT_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 
-# Dedicated kubeconfig: this project never reads or writes ~/.kube/config.
+# Own kubeconfig: ~/.kube/config is never touched
 export KUBECONFIG="$KUBECONFIG_FILE"
 
 # ---------------------------------------------------------------- output
@@ -70,10 +70,10 @@ need() { have "$1" || die "missing prerequisite: $1  (run ./run.sh doctor)"; }
 
 now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
-# kubectl always against OUR cluster, regardless of the user's current context.
+# kubectl always targets our cluster
 k() { kubectl --context "$KIND_CONTEXT" "$@"; }
 
-# wait_for <description> <timeout-seconds> <command...>: poll until the command succeeds.
+# wait_for <description> <timeout-seconds> <command...>
 wait_for() {
   local what="$1" timeout="$2"; shift 2
   local end=$((SECONDS + timeout))
@@ -85,13 +85,13 @@ wait_for() {
 
 cluster_exists() { kind get clusters 2>/dev/null | grep -qx "$CLUSTER_NAME"; }
 
-# Version helpers for the local registry reference used in Git (kind nodes resolve it).
+# Local registry reference used in Git
 registry_ref() { echo "localhost:${REGISTRY_PORT}/releaseops/app"; }
 
 port_in_use() { # port_in_use <port>: true if something listens on 127.0.0.1:<port>
   (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
 }
 
-# The workspace revision shown in reports (works with or without commits).
+# Workspace revision shown in reports
 git_rev() { git -C "$ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo "no-commits"; }
 git_dirty() { [[ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]] && echo true || echo false; }

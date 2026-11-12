@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Installs the CLI tools this project needs into ~/.local/bin - no sudo, checksums verified.
-# Only installs what is missing; never replaces a tool you already have.
-# System packages (docker, git, curl, jq, make, unzip, tar) are NOT installed here: see README.
+# Installs missing CLI tools into ~/.local/bin (no sudo, checksums verified).
+# Never replaces an existing tool; system packages (docker, git, ...) are not installed.
 set -euo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"

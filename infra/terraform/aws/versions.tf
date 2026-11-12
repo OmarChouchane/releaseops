@@ -8,9 +8,7 @@ terraform {
     }
   }
 
-  # Remote state is mandatory for anything shared (state holds secrets and must be locked).
-  # Create the bucket once (versioned, encrypted, private), then uncomment:
-  #
+  # For shared use enable remote state (versioned, encrypted, locked bucket):
   # backend "s3" {
   #   bucket       = "<your-tfstate-bucket>"
   #   key          = "releaseops/eks/terraform.tfstate"

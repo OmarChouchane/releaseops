@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Builds reports/out/release-report.{json,md} from what the other scripts RECORDED.
-# Nothing here is computed optimistically: a missing input is reported as "not-run", never as a pass.
+# Builds reports/out/release-report.{json,md} from recorded results; missing input = not-run, never a pass.
 set -uo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"

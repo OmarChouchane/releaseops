@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.14.0"
 
   required_providers {
-    # Exact minor pins; .terraform.lock.hcl (committed) pins the exact patch + hashes.
+    # Exact minor pins; the committed lock file pins patch and hashes
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 3.3.0"
@@ -17,8 +17,6 @@ terraform {
     }
   }
 
-  # Partial configuration: run.sh passes `-backend-config=path=<state file>` so the state lives in
-  # the gitignored .releaseops/ directory with 0600 permissions. The state contains generated
-  # credentials (DB and Grafana passwords) - treat it as a secret. See docs/adr/0004-terraform-boundaries.md.
+  # Partial config: run.sh passes -backend-config; state lives in gitignored .releaseops/ (secret)
   backend "local" {}
 }

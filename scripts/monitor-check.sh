@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Proves the monitoring is real: every PromQL expression in the shipped Grafana dashboard is executed
-# against the live Prometheus and must return data; the alert rules must be loaded; Grafana must have
-# imported the dashboard. Exit 1 if anything is missing.
+# Proves monitoring is real: dashboard queries return data, alerts are loaded, Grafana has the dashboard.
 set -uo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -35,7 +33,7 @@ GPW="$("$ROOT/scripts/infra.sh" output grafana_admin_password 2>/dev/null)"
 if [[ -n "$GPW" ]]; then
   found="$(curl -sS -m 10 -u "admin:$GPW" "$GRAF/api/search?query=ReleaseOps" | jq -r '[.[] | .title] | join("; ")')"
   [[ -n "$found" ]] && ok "$found" || { printf '    %s✖%s dashboard not found in Grafana\n' "$C_RED" "$C_OFF"; FAIL=$((FAIL + 1)); }
-  # The dashboard JSON references datasource uid "prometheus": prove it resolves, by running a query THROUGH Grafana.
+  # Prove the dashboard datasource uid resolves by querying THROUGH Grafana
   via="$(curl -sS -m 15 -u "admin:$GPW" -G "$GRAF/api/datasources/proxy/uid/prometheus/api/v1/query" \
          --data-urlencode "query=min(app_database_up{namespace=\"$NS_APP\"})" | jq -r '.data.result[0].value[1] // "none"')"
   [[ "$via" == 1 ]] && ok "query through Grafana's 'prometheus' datasource works (app_database_up=$via)" \

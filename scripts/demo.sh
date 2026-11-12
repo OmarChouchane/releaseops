@@ -1,14 +1,7 @@
 #!/usr/bin/env bash
-# Controlled bad-release demonstration:
-#   1. record the last known-good Git revision        5. explain the failure from real diagnostics
-#   2. (optional) show drift detection + self-heal     6. revert the Git change
-#   3. push a deliberately invalid desired state       7. let Argo CD reconcile the known-good state
-#   4. detect the failed release                       8. verify again + prove the data survived
-#
+# Bad-release demo: push a bad commit, detect it, git revert, verify, check the data survived.
 #   demo.sh [--skip-drift]        DEMO_SCENARIO=bad-config (default) | bad-image
-#
-# Safe by construction: MySQL and its volume are never touched; the failure is a Git commit that is
-# reverted by another Git commit; an EXIT trap restores the known-good state even if this script dies.
+# Safe: MySQL is never touched; an EXIT trap restores the known-good state.
 set -uo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -113,7 +106,7 @@ step "3/8  push a deliberately invalid release to Git (scenario: $SCENARIO)"
 VALUES="$WORKCLONE/$ENV_VALUES_REL"
 case "$SCENARIO" in
   bad-config)
-    # A realistic mistake: a typo in the database host. The image itself is fine.
+    # A realistic mistake: typo in the database host
     printf '\n# DEMO: deliberately invalid - reverted by the demo\nconfig:\n  database:\n    host: releaseops-mysql-typo\n' >>"$VALUES"
     MSG="release (DEMO, intentionally broken): database host typo" ; EXPECT_FLAG=(--expect-digest "$GOOD_DIGEST") ;;
   bad-image)
@@ -122,15 +115,13 @@ case "$SCENARIO" in
     MSG="release (DEMO, intentionally broken): image digest does not exist" ; EXPECT_FLAG=(--expect-digest "$BAD_DIGEST") ;;
   *) die "unknown DEMO_SCENARIO '$SCENARIO' (bad-config|bad-image)" ;;
 esac
-# Continuous client-side probe (2 req/s) from just before the bad commit until recovery is verified:
-# measures what a real user would have experienced during the failed release.
+# Probe the API (2 req/s) from before the bad commit until recovery
 ( while :; do
     code="$(curl -s -o /dev/null -m 3 -w '%{http_code}' "http://127.0.0.1:${APP_PORT}/user?id=1")" || code=000
     echo "$code" >>"$PROBE_LOG"; sleep 0.5
   done ) &
 PROBE_PID=$!
-# The demo's bad release also declares a short progress deadline, so Kubernetes reports the failure in ~1 minute
-# instead of the chart default (180s, which a legitimate first boot with MySQL initialisation needs).
+# Short progress deadline so the failure shows in about a minute
 printf '\n# DEMO: short progress deadline so the failure is reported quickly\nprogressDeadlineSeconds: 60\n' >>"$VALUES"
 gw add "$ENV_VALUES_REL"; gw commit -q -m "$MSG"; BAD_SHA="$(gitops_head)"; gitops_push; BAD_PUSHED=1
 BAD_AT=$SECONDS
@@ -147,7 +138,7 @@ fi
 DETECT_SECONDS=$((SECONDS - BAD_AT))
 ev detection detected "failure detected ${DETECT_SECONDS}s after the bad commit"
 
-# 4b. Monitoring must notice too: wait (bounded) for the Prometheus alert to actually FIRE.
+# 4b. Wait (bounded) for the Prometheus alert to FIRE
 PROM="http://127.0.0.1:${PROMETHEUS_PORT}"
 if curl -fsS -m 5 "$PROM/-/ready" >/dev/null 2>&1; then
   step "4b/8  waiting for the Prometheus alert ReleaseOpsRolloutStuck to fire (bounded: 150s)"

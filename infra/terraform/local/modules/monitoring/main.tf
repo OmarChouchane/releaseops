@@ -11,7 +11,7 @@ variable "chart_version" { type = string }
 variable "grafana_node_port" { type = number }
 variable "prometheus_node_port" { type = number }
 
-# No default admin/prom-operator credentials: a random password, kept in a Secret + TF state.
+# Random Grafana password, stored in a Secret and in TF state
 resource "random_password" "grafana" {
   length  = 24
   special = false
@@ -42,9 +42,7 @@ resource "helm_release" "kube_prometheus_stack" {
   cleanup_on_fail = true
 
   values = [yamlencode({
-    # Sized for a laptop: no Alertmanager, no node-exporter, no scraping of control-plane
-    # components that kind does not expose. Alerts are evaluated by Prometheus and visible in its UI
-    # and in Grafana; add Alertmanager when there is a receiver to notify.
+    # Laptop-sized: no Alertmanager, node-exporter or control-plane scraping
     alertmanager               = { enabled = false }
     nodeExporter               = { enabled = false }
     "prometheus-node-exporter" = { enabled = false }
@@ -59,7 +57,7 @@ resource "helm_release" "kube_prometheus_stack" {
         kubeScheduler         = false
         kubeControllerManager = false
         kubeProxy             = false
-        # node-exporter is off, so its rules would only ever be "no data".
+        # node-exporter is off: its rules would only show no data
         nodeExporterAlerting  = false
         nodeExporterRecording = false
         node                  = false
@@ -67,8 +65,7 @@ resource "helm_release" "kube_prometheus_stack" {
     }
 
     prometheusOperator = {
-      # The admission webhook needs a certificate-patching Job; skipping it removes two moving
-      # parts at the cost of server-side validation of PrometheusRule objects.
+      # No admission webhook: fewer moving parts, no server-side rule validation
       admissionWebhooks = { enabled = false }
       tls               = { enabled = false }
       resources = {
@@ -90,8 +87,7 @@ resource "helm_release" "kube_prometheus_stack" {
         nodePort = var.prometheus_node_port
       }
       prometheusSpec = {
-        # Select PodMonitors/ServiceMonitors/Rules from ALL namespaces, not only those labelled
-        # with this Helm release - the application chart ships its own.
+        # Select monitors and rules from ALL namespaces (the app chart ships its own)
         podMonitorSelectorNilUsesHelmValues     = false
         serviceMonitorSelectorNilUsesHelmValues = false
         ruleSelectorNilUsesHelmValues           = false
@@ -118,7 +114,7 @@ resource "helm_release" "kube_prometheus_stack" {
         nodePort = var.grafana_node_port
       }
       resources = {
-        # 384Mi was OOM-killed (exit 137) once the 21-panel dashboard was open on a fresh cluster.
+        # 384Mi was OOM-killed with the dashboard open
         requests = { cpu = "50m", memory = "256Mi" }
         limits   = { memory = "768Mi" }
       }

@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
-# Release verification. A release is "successful" only if EVERY check below passes - a Deployment
-# existing, or Argo CD saying Healthy, is not enough.
-#
+# Release verification: passes only if EVERY check passes (skips are never passes).
 #   verify.sh [--label NAME] [--wait SECONDS] [--expect-digest sha256:...] [--expect-revision GIT_SHA]
 #             [--no-monitoring]
-#
-# Exit 0: all checks passed (skips are listed, never counted as passes). Exit 1: at least one failed.
-# Output: a table, plus reports/out/verification-<label>.json with per-check status/detail/duration
-# and (on failure) cluster diagnostics.
+# Exit 0 = all passed, 1 = at least one failed. JSON: reports/out/verification-<label>.json
 set -uo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -35,8 +30,7 @@ MYSQL_SELECTOR="app.kubernetes.io/instance=${APP_NAME},app.kubernetes.io/compone
 
 remaining() { local r=$((DEADLINE - SECONDS)); ((r < 5)) && r=5; echo "$r"; }
 
-# run_check <name> <description> <function>
-# Function contract: print a one-line detail on stdout; return 0=pass, 1=fail, 2=skip.
+# run_check <name> <description> <function>; the function returns 0=pass, 1=fail, 2=skip
 run_check() {
   local name="$1" desc="$2" fn="$3" start=$SECONDS detail rc status
   detail="$($fn 2>&1)"; rc=$?
@@ -65,7 +59,7 @@ c_argocd_sync() {
 c_argocd_health() {
   local j h
   until j="$(app_json)" && h="$(jq -r '.status.health.status // "Unknown"' <<<"$j")" && [[ "$h" == Healthy ]]; do
-    # Degraded is a verdict (e.g. ProgressDeadlineExceeded), not a transient state: stop waiting.
+    # Degraded is a final verdict, stop waiting
     if [[ "$h" == Degraded ]] || ((SECONDS >= DEADLINE)); then
       echo "health=$h: $(jq -r '[.status.resources[]? | select(.health.status != null and .health.status != "Healthy") | "\(.kind)/\(.name)=\(.health.status)"] | join(", ")' <<<"$j") $(dep_json | jq -r '[.status.conditions[]? | select(.type=="Progressing" and .status!="True") | "Deployment Progressing=False (\(.reason))"] | join(", ")')"; return 1
     fi
@@ -74,9 +68,7 @@ c_argocd_health() {
   echo "Healthy"
 }
 
-# Platform manifests referenced by an image INDEX held in the local registry (nothing for other registries).
-# Needed because the same image content can legitimately be published under several index digests
-# (e.g. an identical rebuild gets new provenance metadata), and the container runtime reports only one of them.
+# Child manifests of an image index (identical rebuilds get new index digests)
 index_children() { # index_children <repository-ref> <index-digest>
   local ref="$1" dig="$2" host path
   host="${ref%%/*}"; path="${ref#*/}"
@@ -98,13 +90,12 @@ c_image() {
   while IFS= read -r p; do
     n=$((n + 1))
     pname="$(jq -r .n <<<"$p")"; pspec="$(jq -r .spec <<<"$p")"; pid="$(jq -r .id <<<"$p")"; d="${pid##*@}"
-    # 1) the pod was created from the expected release (pod specs are immutable)
+    # 1) the pod was created from the expected release
     [[ "$pspec" == *"@$EXPECT_DIGEST" ]] || { echo "pod $pname was created from '$pspec', expected ...@$EXPECT_DIGEST"; return 1; }
-    # 2) what the kubelet actually pulled: the expected digest, or provably a child manifest of that index
+    # 2) the kubelet pulled the expected digest or a child of that index
     if [[ "$d" == "$EXPECT_DIGEST" ]]; then :
     elif [[ -n "$children" ]] && { grep -qx "$d" <<<"$children" || grep -qxFf <(echo "$children") <(index_children "$repo" "$d"); }; then
-      # Identical image content published under more than one index digest (e.g. a rebuild with new provenance
-      # metadata): the node already had the other index, so the runtime reports that one. Same platform image.
+      # Same platform image under another index digest (identical rebuild)
       note=" (runtime reports ${d:0:15}…: another index holding the identical platform image)"
     else echo "pod $pname runs image ID '$pid', which is neither the expected digest nor provably the same image"; return 1; fi
   done <<<"$live"
@@ -130,7 +121,7 @@ c_rollout() {
 
 c_pods() {
   local app notready mysql
-  # Pods already being deleted (e.g. the previous, failed ReplicaSet after a rollback) are not part of the release.
+  # Ignore pods already being deleted (old ReplicaSet after a rollback)
   notready="$(k -n "$NS_APP" get pods -l "$SELECTOR" -o json | jq -r '[.items[] | select(.metadata.deletionTimestamp==null) | select(([.status.conditions[]? | select(.type=="Ready" and .status=="True")] | length) == 0) | .metadata.name] | join(",")')"
   [[ -z "$notready" ]] || { echo "pods not Ready: $notready"; return 1; }
   app="$(k -n "$NS_APP" get pods -l "$SELECTOR" -o json | jq '[.items[] | select(.metadata.deletionTimestamp==null)] | length')"
@@ -150,14 +141,14 @@ c_health() {
   local pod body
   pod="$(k -n "$NS_APP" get pods -l "$SELECTOR" -o json | jq -r '[.items[] | select(.status.phase=="Running" and .metadata.deletionTimestamp==null and ([.status.conditions[]? | select(.type=="Ready" and .status=="True")] | length) > 0)][0].metadata.name // empty')"
   [[ -n "$pod" ]] || { echo "no running application pod"; return 1; }
-  # Actuator lives on the management port, which is deliberately not in the Service: go through the pod.
+  # The management port is not in the Service: go through the pod
   body="$(k -n "$NS_APP" exec "$pod" -c app -- wget -q -T 5 -O- "http://127.0.0.1:8081/actuator/health" 2>&1)" || { echo "health request failed: $body"; return 1; }
   [[ "$(jq -r .status <<<"$body")" == UP && "$(jq -r .components.db.status <<<"$body")" == UP ]] \
     || { echo "unhealthy: $(jq -c '{status, db:.components.db.status}' <<<"$body" 2>/dev/null || echo "$body")"; return 1; }
   echo "status=UP db=UP (pod $pod)"
 }
 
-# API checks go through the Service (NodePort), the same path real clients use.
+# API checks go through the Service, like real clients
 api() { curl -sS -m 10 "$@"; }
 c_api_post() {
   local name="verify-${RUN_ID}" hdr body code loc
@@ -250,8 +241,7 @@ need kubectl; need jq; need curl
 [[ -n "$EXPECT_DIGEST" ]] && info "expected image digest: $EXPECT_DIGEST" || warn "no expected digest: the image check will be skipped"
 [[ -n "$EXPECT_REV" ]] && info "expected GitOps revision: ${EXPECT_REV:0:12}"
 
-# Reach the Service: NodePort on localhost if published, otherwise a throw-away port-forward.
-# This runs AFTER the rollout/readiness checks: probing earlier would only measure "pods not up yet".
+# Reach the Service via NodePort, else a temporary port-forward
 wait_http() { # wait_http <url> <seconds>: any HTTP response counts as "reachable"
   local end=$((SECONDS + $2))
   until curl -s -m 3 -o /dev/null "$1"; do ((SECONDS >= end)) && return 1; sleep 2; done
@@ -261,7 +251,7 @@ ensure_api() {
   wait_http "$API_URL/user?id=1" 45 && return 0
   warn "NodePort $API_URL not reachable after 45s - falling back to a port-forward to the Service"
   local p=$((20000 + RANDOM % 20000))
-  # kubectl directly (not the k() wrapper): $! must be the real kubectl PID so the trap can stop it.
+  # call kubectl directly so $! is its real PID
   kubectl --context "$KIND_CONTEXT" -n "$NS_APP" port-forward "svc/$APP_NAME" "$p:8080" >/dev/null 2>&1 & PF_PID=$!
   API_URL="http://127.0.0.1:$p"
   wait_http "$API_URL/user?id=1" 30 || warn "the API is not reachable through the port-forward either; the api.* checks will fail"

@@ -1,18 +1,14 @@
 name: ci
 
-# What runs where (see docs/ci.md):
-#   pull_request  -> test, validate, build + scan the image. NO registry login, NO write token, NO secrets.
-#                    (`pull_request`, never `pull_request_target`: fork code never gets privileges.)
-#   push to main  -> the same, then publish to GHCR by digest and open a RELEASE PULL REQUEST that
-#                    pins the new digest in Git. Argo CD deploys only after a human merges it.
+# What runs where:
+#  pull_request  -> test, validate, build + scan; no secrets, no write token (never pull_request_target)
+#  push to main  -> same, then publish by digest and open a release PR (a human merges it)
 
 on:
   pull_request:
   push:
     branches: [main]
-    # Merging a release PR (or reverting one) only changes the pinned digest. It must not build and
-    # publish a new image, or every release would open the next release PR forever. Docs do not
-    # change the image either.
+    # A release merge only changes the pinned digest: do not rebuild (avoids a release loop)
     paths-ignore:
       - deploy/environments/**
       - docs/**
@@ -134,7 +130,7 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           format: table
-          # Findings are never silenced here. A justified, expiring exception goes into .trivyignore.yaml (reviewed in a PR).
+          # Never silenced here: add a justified, expiring exception to .trivyignore.yaml
           trivyignores: .trivyignore.yaml
         env:
           TRIVY_SKIP_DB_UPDATE: "false"

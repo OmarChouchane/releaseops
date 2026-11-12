@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Prerequisite and environment checks. Exit 1 if something REQUIRED is missing.
-# Never changes anything on your machine.
+# Prerequisite checks; exit 1 if something REQUIRED is missing. Changes nothing.
 set -uo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"

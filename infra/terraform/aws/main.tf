@@ -33,7 +33,7 @@ module "vpc" {
   public_subnets  = [for i, _ in local.azs : cidrsubnet(var.vpc_cidr, 4, i)]
   private_subnets = [for i, _ in local.azs : cidrsubnet(var.vpc_cidr, 4, i + 8)]
 
-  # Cost: a NAT gateway is the biggest hidden line item of a small EKS cluster. Only one, and only if asked.
+  # A NAT gateway is the biggest hidden cost: off unless asked
   enable_nat_gateway     = var.private_nodes
   single_nat_gateway     = true
   one_nat_gateway_per_az = false
@@ -82,8 +82,7 @@ module "eks" {
   endpoint_public_access_cidrs = var.api_allowed_cidrs
   endpoint_private_access      = true
 
-  # The identity that runs `terraform apply` becomes cluster admin through an EKS access entry
-  # (no aws-auth ConfigMap). Add further principals with access_entries when needed.
+  # The apply identity becomes cluster admin via an EKS access entry
   enable_cluster_creator_admin_permissions = true
 
   addons = {
@@ -157,7 +156,7 @@ data "aws_iam_policy_document" "github_trust" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
-    # Only workflow runs of THIS repository on THIS branch (not forks, not pull requests).
+    # Only this repository's workflow runs on this branch (no forks, no PRs)
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"

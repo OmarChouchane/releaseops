@@ -37,22 +37,21 @@ resource "helm_release" "argocd" {
   cleanup_on_fail = true
 
   values = [yamlencode({
-    # Components a single-cluster demo does not need are off to save memory:
+    # Unneeded components are off to save memory
     dex           = { enabled = false } # no SSO
     notifications = { enabled = false }
-    # This chart version has no `enabled` switch for the ApplicationSet controller; the demo
-    # does not use ApplicationSets, so it is scaled to zero.
+    # No `enabled` switch for ApplicationSet in this chart version: scaled to zero
     applicationSet = { replicas = 0 }
     configs = {
       params = {
-        # TLS is terminated nowhere on localhost; the UI is bound to 127.0.0.1 by the kind port mapping.
+        # TLS off: the UI is bound to 127.0.0.1 by the kind port mapping
         "server.insecure" = true
       }
       cm = {
-        # Poll Git every ~30s so the demo reacts quickly (default 120s + 60s jitter).
+        # Poll Git every ~30s so the demo reacts quickly
         "timeout.reconciliation"        = "30s"
         "timeout.reconciliation.jitter" = "10s"
-        # Track ownership with annotations (the Argo CD 3.x default, made explicit here).
+        # Track ownership with annotations (Argo CD 3.x default)
         "application.resourceTrackingMethod" = "annotation"
       }
     }
@@ -87,7 +86,7 @@ resource "helm_release" "argocd" {
   })]
 }
 
-# Credentials for a private remote repository. Not created for the (default) public/local source.
+# Credentials for a private remote repo; not created for the local source
 resource "kubernetes_secret_v1" "repo_credentials" {
   count = var.repo_password != "" ? 1 : 0
 
@@ -106,9 +105,7 @@ resource "kubernetes_secret_v1" "repo_credentials" {
 }
 
 # --------------------------------------------------------------------------- GitOps root objects
-# AppProject + Application live in a tiny local chart, installed AFTER Argo CD. Using a Helm release
-# (instead of kubernetes_manifest) means Terraform does not need the Argo CD CRDs at *plan* time, so
-# a first-time `terraform apply` works in a single pass.
+# AppProject + Application in a small chart after Argo CD: no CRDs needed at plan time
 resource "helm_release" "gitops_bootstrap" {
   name      = "gitops-bootstrap"
   namespace = var.namespace

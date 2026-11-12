@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Stage 0 of the setup: a dedicated kind cluster + a local image registry.
-# Idempotent: re-running reuses what exists. Only touches resources named after this project.
+# Stage 0: kind cluster + local registry (idempotent, project-scoped).
 set -euo pipefail
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -50,8 +49,7 @@ ensure_cluster() {
       port_in_use "$p" && die "host port $p is already in use (override APP_PORT/ARGOCD_PORT/GRAFANA_PORT/PROMETHEUS_PORT)"
     done
     step "creating kind cluster '$CLUSTER_NAME' ($KIND_NODE_IMAGE)"
-    # kind picks a random host port for the API server. On Docker Desktop that port can
-    # collide with one Windows already holds, so retry a few times (each try picks a new one).
+    # kind picks a random API port that can collide on Docker Desktop: retry
     local attempt
     for attempt in 1 2 3 4; do
       kind create cluster --config "$STATE_DIR/kind-config.yaml" --kubeconfig "$KUBECONFIG_FILE" --wait 120s && break
@@ -59,14 +57,13 @@ ensure_cluster() {
       warn "cluster creation failed (attempt $attempt) - retrying"; sleep 3
     done
   fi
-  # Always (re)write our private kubeconfig; ~/.kube/config is never modified.
+  # Always rewrite our private kubeconfig
   kind export kubeconfig --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG_FILE" >/dev/null
   chmod 600 "$KUBECONFIG_FILE"
 }
 
 wire_registry_into_cluster() {
-  # Let containerd on every node resolve localhost:<port> to the registry container, so pods can
-  # reference images as localhost:5001/... exactly as the host does.
+  # Let nodes resolve localhost:<port> to the registry container
   local node dir="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
   for node in $(kind get nodes --name "$CLUSTER_NAME"); do
     docker exec "$node" mkdir -p "$dir"

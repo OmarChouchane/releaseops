@@ -34,7 +34,7 @@ EOF
 }
 
 cmd_setup() {
-  # Missing CLI tools (kind/kubectl/helm/terraform) are installed into ~/.local/bin - no sudo, checksums verified.
+  # Missing CLI tools install into ~/.local/bin (no sudo, checksums verified)
   "$S/install-tools.sh"
   "$S/doctor.sh"
   step "Stage 0: cluster + registry (script)"; "$S/cluster.sh"
@@ -63,7 +63,7 @@ cmd_up() {
   local start=$SECONDS
   cmd_setup
   if [[ "$GITOPS_MODE" == remote ]]; then
-    # In remote mode the image comes from CI (GHCR) through a reviewed release PR - not from this machine.
+    # Remote mode: the image comes from CI via a release PR
     cat <<EOF
 
     Remote GitOps mode: Argo CD now tracks ${GITOPS_REPO_URL} @ ${GITOPS_BRANCH}.
