@@ -1,6 +1,6 @@
 # Throw-away git server for the local GitOps demo (docs/adr/0005-gitops-source-and-release-flow.md)
 # Unauthenticated by design: it is reachable only inside the kind cluster and via kubectl port-forward.
-FROM alpine:3.22@sha256:bfe7ceb9f09ec0566c48fb93356e45a47a00be5a1dd14fa5b909e7709c66b034
+FROM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 
 RUN apk add --no-cache git git-daemon nginx fcgiwrap spawn-fcgi \
  && addgroup -g 10001 -S git && adduser -u 10001 -S -G git -H -h /data -s /sbin/nologin git \
