@@ -29,6 +29,9 @@ read a support policy.
 | kube-prometheus-stack | **92.9.0** (Prometheus Operator v0.94.1) | Three weeks old; the chart ships several releases per day, so "latest" is a moving target | GitHub releases of `prometheus-community/helm-charts` |
 | Trivy | **0.76.0** | Post-incident release (see below) | GitHub releases |
 | trivy-action | v0.36.0, pinned by commit SHA | See supply-chain note | GitHub releases |
+| hadolint | **v2.12.0**, image pinned by digest | Dockerfile lint in CI and pre-commit | Docker Hub `hadolint/hadolint` |
+| actionlint | **1.7.7**, image pinned by digest | Workflow lint in CI and pre-commit | Docker Hub `rhysd/actionlint` |
+| kubeconform | **v0.7.0**, image pinned by digest | Validates the rendered chart against Kubernetes schemas (1.31) | `ghcr.io/yannh/kubeconform` |
 | Other GitHub Actions | pinned by commit SHA (see `ci.yml` comments for tags) | Tags are mutable | GitHub API |
 | registry image | `registry:2` by digest | Local registry for digest-based releases | – |
 

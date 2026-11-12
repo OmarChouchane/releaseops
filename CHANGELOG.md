@@ -16,6 +16,10 @@ versioning: [SemVer](https://semver.org/) once releases are tagged.
 - `./run.sh` command-line entry point.
 
 ### Changed
+- Repository layout: Terraform split into `infra/terraform/modules` and `infra/terraform/environments/{local,aws}`;
+  scripts grouped into `setup/`, `release/`, `verify/`, `lib/`, `ci/`; git-mirror image moved to `deploy/git-mirror`.
+- README shortened to an entry point; details moved to `docs/` (architecture, runbooks, results, limitations).
+- CI also lints Dockerfiles (hadolint), workflows (actionlint) and the rendered chart (kubeconform).
 - Spring Boot 3.3.5 to 3.5.16 (Tomcat and Jackson overridden to patched versions).
 - `POST /user` returns a `Location` header; an unknown user returns 404.
 
