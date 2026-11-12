@@ -36,7 +36,7 @@ cmd_test() {
 
 cmd_build() {
   step "docker build $LOCAL_IMAGE"
-  local rev; rev="$(git_rev)$([[ "$(git_dirty)" == true ]] && echo -dirty)"
+  local rev; rev="$(git_rev)$([[ "$(git_dirty)" == true ]] && echo -dirty || true)"
   DOCKER_BUILDKIT=1 docker build -q -t "$LOCAL_IMAGE" --build-arg VERSION="$rev" --build-arg REVISION="$(git_rev)" "$ROOT" >/dev/null
   ok "built $LOCAL_IMAGE ($(docker image inspect "$LOCAL_IMAGE" --format '{{.Size}}' | awk '{printf "%.0f MB", $1/1e6}'))"
 }
@@ -76,7 +76,7 @@ cmd_sbom() {
 cmd_publish() {
   need docker
   local rev tag out digest repo; repo="$(registry_ref)"
-  rev="$(git_rev)$([[ "$(git_dirty)" == true ]] && echo -dirty)"
+  rev="$(git_rev)$([[ "$(git_dirty)" == true ]] && echo -dirty || true)"
   tag="${rev}-$(date -u +%Y%m%d%H%M%S)"
   step "pushing $repo:$tag"
   docker tag "$LOCAL_IMAGE" "$repo:$tag"
