@@ -118,8 +118,9 @@ resource "helm_release" "kube_prometheus_stack" {
         nodePort = var.grafana_node_port
       }
       resources = {
-        requests = { cpu = "50m", memory = "128Mi" }
-        limits   = { memory = "384Mi" }
+        # 384Mi was OOM-killed (exit 137) once the 21-panel dashboard was open on a fresh cluster.
+        requests = { cpu = "50m", memory = "256Mi" }
+        limits   = { memory = "768Mi" }
       }
       sidecar = {
         dashboards = {
