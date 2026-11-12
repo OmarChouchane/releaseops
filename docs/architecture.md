@@ -75,7 +75,7 @@ See [ADR-0004](adr/0004-terraform-boundaries.md). In short:
 | Job | Runs on | Does |
 |---|---|---|
 | `test` | PR + main | `./mvnw verify` with real MySQL (Testcontainers); uploads surefire reports |
-| `validate` | PR + main | `helm lint --strict` + render, `terraform fmt/validate` for local and AWS, `bash -n`, `shellcheck` |
+| `validate` | PR + main | `helm lint --strict` + render + `kubeconform`, `terraform fmt/validate` (modules, local, AWS), `bash -n`, `shellcheck`, `hadolint`, `actionlint` |
 | `image` | PR + main | Build → **Trivy** (fail on fixable HIGH/CRITICAL) → **SBOM (Syft/SPDX)** → on `main` only: push the *same* image to GHCR, capture digest, sign provenance |
 | `release-pr` | main only | Pins `image@sha256:…` in `deploy/environments/local/values.yaml` and opens a **pull request** |
 

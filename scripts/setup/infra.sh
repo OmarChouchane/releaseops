@@ -55,6 +55,7 @@ cmd_output() { tf_env; tf_init; tf output -raw "$1"; }
 cmd_validate() { # offline: no cluster, no providers' network calls beyond init
   need terraform
   local d
+  terraform -chdir="$ROOT/infra/terraform/modules" fmt -check -recursive >/dev/null || die "terraform fmt needed in infra/terraform/modules"
   for d in "$ROOT/infra/terraform/environments/local" "$ROOT/infra/terraform/environments/aws"; do
     [[ -d "$d" ]] || continue
     step "terraform validate: ${d#"$ROOT"/}"

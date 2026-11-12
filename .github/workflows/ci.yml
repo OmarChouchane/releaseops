@@ -52,7 +52,7 @@ jobs:
           retention-days: 14
 
   validate:
-    name: Helm, Terraform and shell validation
+    name: Lint and validate (Helm, Terraform, shell, Dockerfile, workflows)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -76,6 +76,7 @@ jobs:
           helm lint infra/terraform/modules/argocd/chart --strict
       - name: terraform fmt + validate (local and AWS; no credentials, no apply)
         run: |
+          terraform fmt -check -recursive infra/terraform/modules
           for d in infra/terraform/environments/local infra/terraform/environments/aws; do
             terraform -chdir=$d fmt -check -recursive
             terraform -chdir=$d init -backend=false -input=false
@@ -85,6 +86,20 @@ jobs:
         run: |
           for f in run.sh scripts/{setup,release,verify,lib,ci}/*.sh deploy/git-mirror/entrypoint.sh; do bash -n "$f"; done
           shellcheck -x -S warning run.sh scripts/{setup,release,verify,lib,ci}/*.sh
+      # Linters run as digest-pinned images so CI and local runs use exactly the same version.
+      - name: kubeconform (rendered chart)
+        run: |
+          D=sha256:0000000000000000000000000000000000000000000000000000000000000000
+          helm template releaseops deploy/helm/releaseops -n releaseops -f deploy/environments/local/values.yaml --set image.digest=$D |
+            docker run --rm -i ghcr.io/yannh/kubeconform@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c               -strict -summary -ignore-missing-schemas -kubernetes-version 1.31.0 -
+      - name: hadolint (Dockerfiles)
+        run: |
+          for f in Dockerfile deploy/git-mirror/Dockerfile; do
+            docker run --rm -i hadolint/hadolint@sha256:30a8fd2e785ab6176eed53f74769e04f125afb2f74a6c52aef7d463583b6d45e               /bin/hadolint --failure-threshold error - < "$f"
+          done
+      - name: actionlint (workflows)
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 -color
 
   image:
     name: Build, scan, SBOM, publish
