@@ -47,6 +47,10 @@ Then: `./run.sh demo` (bad release + Git rollback) and `./run.sh status`.
 
 ![Grafana ReleaseOps dashboard](docs/img/grafana-dashboard.png)
 
+**Prometheus alert** — during the demo's bad release, `ReleaseOpsRolloutStuck` fires while the old pods keep serving:
+
+![Prometheus alerts page with ReleaseOpsRolloutStuck firing](docs/img/prometheus-alert-firing.png)
+
 **Demo result** — a bad release is detected, rolled back with `git revert`, and no data is lost:
 
 ![Terminal showing DEMO COMPLETE](docs/img/demo-complete.png)
