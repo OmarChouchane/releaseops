@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Read-only overview: cluster, Argo CD, app, monitoring, access URLs.
 set -uo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 if ! cluster_exists; then
   warn "cluster '$CLUSTER_NAME' does not exist. Start with: ./run.sh up"; exit 1
@@ -28,7 +28,7 @@ fi
 
 if [[ -n "${STATUS_QUIET:-}" ]]; then exit 0; fi
 step "access"
-gpw="$("$ROOT/scripts/infra.sh" output grafana_admin_password 2>/dev/null || echo '<run: terraform output -raw grafana_admin_password>')"
+gpw="$("$ROOT/scripts/setup/infra.sh" output grafana_admin_password 2>/dev/null || echo '<run: terraform output -raw grafana_admin_password>')"
 apw="$(k -n "$NS_ARGOCD" get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null || echo '<not available>')"
 cat <<EOF
     Application API : http://localhost:${APP_PORT}/user?id=1

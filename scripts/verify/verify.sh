@@ -4,8 +4,8 @@
 #             [--no-monitoring]
 # Exit 0 = all passed, 1 = at least one failed. JSON: reports/out/verification-<label>.json
 set -uo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 LABEL="release"; WAIT=240; EXPECT_DIGEST=""; EXPECT_REV=""; MONITORING=1
 while [[ $# -gt 0 ]]; do

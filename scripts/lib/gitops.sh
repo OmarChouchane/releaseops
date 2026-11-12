@@ -18,7 +18,7 @@ mirror_image_ref() { # echoes registry/name@digest for the git-mirror image (aft
 mirror_build_push() {
   local tag="localhost:${REGISTRY_PORT}/releaseops/git-mirror:1" out digest
   step "building the git-mirror image"
-  docker build -q -t "$tag" "$ROOT/scripts/git-mirror" >/dev/null
+  docker build -q -t "$tag" "$ROOT/deploy/git-mirror" >/dev/null
   out="$(docker push "$tag" 2>&1)"
   digest="$(grep -o 'digest: sha256:[a-f0-9]\{64\}' <<<"$out" | tail -1 | awk '{print $2}')"
   [[ -n "$digest" ]] || die "could not read the pushed digest of $tag:\n$out"

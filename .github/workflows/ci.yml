@@ -83,8 +83,8 @@ jobs:
           done
       - name: shell syntax + shellcheck
         run: |
-          for f in run.sh scripts/*.sh scripts/lib/*.sh scripts/git-mirror/entrypoint.sh; do bash -n "$f"; done
-          shellcheck -x -S warning run.sh scripts/*.sh scripts/lib/*.sh
+          for f in run.sh scripts/{setup,release,verify,lib,ci}/*.sh deploy/git-mirror/entrypoint.sh; do bash -n "$f"; done
+          shellcheck -x -S warning run.sh scripts/{setup,release,verify,lib,ci}/*.sh
 
   image:
     name: Build, scan, SBOM, publish

@@ -89,7 +89,7 @@ flowchart LR
 ### Who owns what
 | Layer | Created by | Notes |
 |---|---|---|
-| kind cluster + local registry | `scripts/cluster.sh` | Stage 0, outside Terraform on purpose (provider cycle) |
+| kind cluster + local registry | `scripts/setup/cluster.sh` | Stage 0, outside Terraform on purpose (provider cycle) |
 | Namespaces, DB Secret, Argo CD, Application/AppProject, kube-prometheus-stack, git mirror | **Terraform** (`infra/terraform/environments/local`) | Static kubeconfig + pinned context |
 | Everything the Helm chart renders in `releaseops` | **Argo CD** | Terraform never touches it |
 | Image digest in `values.yaml` | CI release PR (remote) / `./run.sh deploy` (local) | Never edited by hand |
@@ -339,7 +339,7 @@ Removes the `releaseops` kind cluster, the `releaseops-registry` container, the 
 | `./run.sh up` is slow the first time | Image pulls (kind node, Argo CD, Prometheus, Grafana, MySQL, Trivy DB ≈ 2–3 GB). Re-runs reuse everything. |
 | Argo CD shows `ComparisonError` right after setup | The git mirror was just seeded; `argocd.argoproj.io/refresh=hard` is applied automatically, or wait ≤ 30 s. |
 | `docker pull ghcr.io/aquasecurity/trivy` is denied | The scanner is pulled from Docker Hub (`aquasec/trivy`, same digest as on public.ecr.aws). |
-| `Permission denied: ./run.sh` after cloning | The scripts were created on Windows without the executable bit. Fix once, then commit it: `git add --chmod=+x run.sh scripts/*.sh scripts/lib/*.sh scripts/ci/*.sh scripts/git-mirror/entrypoint.sh && git commit -m "scripts: executable"` (or locally: `chmod +x run.sh scripts/*.sh scripts/lib/*.sh scripts/ci/*.sh scripts/git-mirror/entrypoint.sh`). |
+| `Permission denied: ./run.sh` after cloning | The scripts were created on Windows without the executable bit. Fix once, then commit it: `git add --chmod=+x run.sh scripts/*.sh scripts/lib/*.sh scripts/ci/*.sh deploy/git-mirror/entrypoint.sh && git commit -m "scripts: executable"` (or locally: `chmod +x run.sh scripts/*.sh scripts/lib/*.sh scripts/ci/*.sh deploy/git-mirror/entrypoint.sh`). |
 | Reset a broken state | `./run.sh cleanup --yes && ./run.sh up` |
 
 ---

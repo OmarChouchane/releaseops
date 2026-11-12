@@ -35,12 +35,12 @@ EOF
 
 cmd_setup() {
   # Missing CLI tools install into ~/.local/bin (no sudo, checksums verified)
-  "$S/install-tools.sh"
-  "$S/doctor.sh"
-  step "Stage 0: cluster + registry (script)"; "$S/cluster.sh"
+  "$S/setup/install-tools.sh"
+  "$S/setup/doctor.sh"
+  step "Stage 0: cluster + registry (script)"; "$S/setup/cluster.sh"
   if [[ "$GITOPS_MODE" == local ]]; then mirror_build_push; fi
   step "Stages 1-4: Terraform (namespaces, secrets, Argo CD, monitoring${GITOPS_MODE:+, GitOps source: $GITOPS_MODE})"
-  "$S/infra.sh" apply
+  "$S/setup/infra.sh" apply
   if [[ "$GITOPS_MODE" == local ]]; then
     step "seeding the in-cluster git mirror from this workspace"
     wait_for "git mirror ready" 120 k -n "$MIRROR_NS" wait --for=condition=Available deploy/git-mirror --timeout=5s || die "git mirror did not start"
@@ -55,9 +55,9 @@ cmd_setup() {
   ok "setup complete"
 }
 
-cmd_deploy() { "$S/release.sh" all; }
+cmd_deploy() { "$S/release/release.sh" all; }
 
-cmd_verify() { "$S/verify.sh" "$@"; }
+cmd_verify() { "$S/verify/verify.sh" "$@"; }
 
 cmd_up() {
   local start=$SECONDS
@@ -73,14 +73,14 @@ cmd_up() {
       3. merge that pull request  ->  Argo CD deploys it
       4. ./run.sh verify          ->  proves the release works
 EOF
-    "$S/status.sh" || true
+    "$S/verify/status.sh" || true
     return 0
   fi
   cmd_deploy
-  "$S/verify.sh" --label baseline --wait 300 || { warn "baseline verification FAILED - see output above"; "$S/report.sh" || true; exit 1; }
-  step "monitoring"; "$S/monitor-check.sh" || warn "monitoring check reported problems (see above)"
-  "$S/report.sh" || true
-  "$S/status.sh" || true
+  "$S/verify/verify.sh" --label baseline --wait 300 || { warn "baseline verification FAILED - see output above"; "$S/release/report.sh" || true; exit 1; }
+  step "monitoring"; "$S/verify/monitor-check.sh" || warn "monitoring check reported problems (see above)"
+  "$S/release/report.sh" || true
+  "$S/verify/status.sh" || true
   ok "done in $((SECONDS - start))s.  Next: ./run.sh demo   (bad release + Git rollback)"
 }
 
@@ -100,10 +100,10 @@ cmd_validate() {
   helm lint "$CHART_DIR" -f "$ROOT/$ENV_VALUES_REL" --set image.digest="$dig" --strict
   helm template "$APP_NAME" "$CHART_DIR" -n "$NS_APP" -f "$ROOT/$ENV_VALUES_REL" --set image.digest="$dig" >/dev/null && ok "chart renders"
   helm lint "$ROOT/infra/terraform/modules/argocd/chart" --strict >/dev/null && ok "gitops-bootstrap chart lints"
-  "$S/infra.sh" validate
+  "$S/setup/infra.sh" validate
   step "shell syntax"
-  local f; for f in "$ROOT"/run.sh "$S"/*.sh "$S"/lib/*.sh "$S"/git-mirror/entrypoint.sh; do bash -n "$f" || die "syntax error in $f"; done; ok "all scripts parse"
-  if have shellcheck; then shellcheck -x -S warning "$ROOT"/run.sh "$S"/*.sh "$S"/lib/*.sh && ok "shellcheck clean"; else info "shellcheck not installed - skipped"; fi
+  local f; for f in "$ROOT"/run.sh "$S"/{setup,release,verify,lib,ci}/*.sh "$ROOT"/deploy/git-mirror/entrypoint.sh; do bash -n "$f" || die "syntax error in $f"; done; ok "all scripts parse"
+  if have shellcheck; then shellcheck -x -S warning "$ROOT"/run.sh "$S"/{setup,release,verify,lib,ci}/*.sh && ok "shellcheck clean"; else info "shellcheck not installed - skipped"; fi
 }
 
 cmd_cleanup() {
@@ -129,17 +129,17 @@ cmd_cleanup() {
 
 case "${1:-help}" in
   up) cmd_up ;;
-  doctor) "$S/doctor.sh" ;;
-  tools) "$S/install-tools.sh" ;;
+  doctor) "$S/setup/doctor.sh" ;;
+  tools) "$S/setup/install-tools.sh" ;;
   setup) cmd_setup ;;
   deploy) cmd_deploy ;;
   verify) shift; cmd_verify "$@" ;;
-  demo) shift; "$S/demo.sh" "$@" ;;
-  status) "$S/status.sh" ;;
-  monitor) "$S/monitor-check.sh" ;;
+  demo) shift; "$S/verify/demo.sh" "$@" ;;
+  status) "$S/verify/status.sh" ;;
+  monitor) "$S/verify/monitor-check.sh" ;;
   logs) shift; cmd_logs "$@" ;;
-  report) "$S/report.sh" ;;
-  test) "$S/release.sh" test ;;
+  report) "$S/release/report.sh" ;;
+  test) "$S/release/release.sh" test ;;
   validate) cmd_validate ;;
   cleanup) shift; cmd_cleanup "$@" ;;
   help|-h|--help) usage ;;

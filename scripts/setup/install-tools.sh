@@ -2,8 +2,8 @@
 # Installs missing CLI tools into ~/.local/bin (no sudo, checksums verified).
 # Never replaces an existing tool; system packages (docker, git, ...) are not installed.
 set -euo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 BIN="$HOME/.local/bin"
 mkdir -p "$BIN"

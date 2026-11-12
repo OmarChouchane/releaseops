@@ -6,7 +6,7 @@ terraform {
 
 variable "namespace" { type = string }
 variable "image" {
-  description = "Image built from scripts/git-mirror (pushed to the local registry by run.sh)."
+  description = "Image built from deploy/git-mirror (pushed to the local registry by run.sh)."
   type        = string
   validation {
     condition     = length(var.image) > 0

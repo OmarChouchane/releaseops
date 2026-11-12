@@ -9,7 +9,7 @@ unreachable (if readiness did not include it), or the *wrong image* is running. 
 bad release – it applies whatever Git contains.
 
 ## Decision
-`scripts/verify.sh` is the acceptance gate. A release is verified only if **all** of these pass:
+`scripts/verify/verify.sh` is the acceptance gate. A release is verified only if **all** of these pass:
 
 1. `argocd.sync` – Application `Synced` to the expected Git revision, no operation in flight
 2. `argocd.health` – Application `Healthy` (early exit if `Degraded`)

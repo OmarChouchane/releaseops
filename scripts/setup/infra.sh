@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Stage 1-4: Terraform against the existing cluster. Subcommands: apply | destroy | output <name> | validate
 set -euo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
-# shellcheck source=lib/gitops.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/gitops.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+# shellcheck source=../lib/gitops.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/gitops.sh"
 
 TF_STATE="$STATE_DIR/terraform.tfstate"
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Proves monitoring is real: dashboard queries return data, alerts are loaded, Grafana has the dashboard.
 set -uo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 PROM="http://127.0.0.1:${PROMETHEUS_PORT}"
 GRAF="http://127.0.0.1:${GRAFANA_PORT}"
@@ -29,7 +29,7 @@ step "Prometheus targets"
 curl -sS -m 10 "$PROM/api/v1/targets" | jq -r --arg ns "$NS_APP" '.data.activeTargets[] | select(.labels.namespace==$ns) | "    \(.health)  \(.labels.pod)  \(.scrapeUrl)"'
 
 step "Grafana dashboard imported"
-GPW="$("$ROOT/scripts/infra.sh" output grafana_admin_password 2>/dev/null)"
+GPW="$("$ROOT/scripts/setup/infra.sh" output grafana_admin_password 2>/dev/null)"
 if [[ -n "$GPW" ]]; then
   found="$(curl -sS -m 10 -u "admin:$GPW" "$GRAF/api/search?query=ReleaseOps" | jq -r '[.[] | .title] | join("; ")')"
   [[ -n "$found" ]] && ok "$found" || { printf '    %s✖%s dashboard not found in Grafana\n' "$C_RED" "$C_OFF"; FAIL=$((FAIL + 1)); }

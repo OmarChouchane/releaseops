@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Prerequisite checks; exit 1 if something REQUIRED is missing. Changes nothing.
 set -uo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 FAIL=0
 req()  { if "${@:2}" >/dev/null 2>&1; then ok "$1"; else printf '    %s✖%s %s\n' "$C_RED" "$C_OFF" "$1" >&2; FAIL=1; fi; }
@@ -20,12 +20,12 @@ done
 if have java && java -version 2>&1 | grep -qE 'version "(17|21)'; then ok "java ($(java -version 2>&1 | head -1)) - used by the Maven test stage"
 else warn "Java 17+ not found: the Maven test stage will fail. Install: sudo apt-get install -y openjdk-17-jdk-headless  - or run with SKIP_TESTS=1 (recorded as skipped)"; fi
 have make || { warn "make not found (optional: only for the Makefile shortcuts) -> sudo apt-get install -y make"; }
-have unzip || warn "unzip not found (only needed by scripts/install-tools.sh for terraform)"
+have unzip || warn "unzip not found (only needed by scripts/setup/install-tools.sh for terraform)"
 for t in kind kubectl helm terraform; do
   if have "$t"; then ok "$t ($(
     case $t in kind) kind version | awk '{print $2}';; kubectl) kubectl version --client -o json 2>/dev/null | jq -r .clientVersion.gitVersion;;
       helm) helm version --short;; terraform) terraform version | head -1;; esac))"
-  else printf '    %s✖%s %s missing\n' "$C_RED" "$C_OFF" "$t" >&2; FAIL=1; hint "./scripts/install-tools.sh   (installs into ~/.local/bin, no sudo)"; fi
+  else printf '    %s✖%s %s missing\n' "$C_RED" "$C_OFF" "$t" >&2; FAIL=1; hint "./run.sh tools   (installs into ~/.local/bin, no sudo)"; fi
 done
 
 step "docker"

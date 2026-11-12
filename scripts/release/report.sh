@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds reports/out/release-report.{json,md} from recorded results; missing input = not-run, never a pass.
 set -uo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 jf() { # jf <file> -> file content or a not-run marker
   [[ -s "$1" ]] && cat "$1" || echo '{"status":"not-run"}'

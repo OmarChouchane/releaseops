@@ -8,7 +8,7 @@ manage the same object, and Terraform providers must not depend on resources cre
 (the classic *provider initialisation cycle*).
 
 ## Decision
-**Stage 0 – shell** (`scripts/cluster.sh`): create/reuse the kind cluster and the local registry. A cluster can not
+**Stage 0 – shell** (`scripts/setup/cluster.sh`): create/reuse the kind cluster and the local registry. A cluster can not
 be both created by Terraform *and* used by that Terraform's kubernetes/helm providers in the same run without
 cycles, so it is created first and Terraform connects to it by a static kubeconfig path + pinned context
 (`kind-releaseops`; it can not act on any other cluster).

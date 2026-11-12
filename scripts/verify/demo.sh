@@ -3,10 +3,10 @@
 #   demo.sh [--skip-drift]        DEMO_SCENARIO=bad-config (default) | bad-image
 # Safe: MySQL is never touched; an EXIT trap restores the known-good state.
 set -uo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
-# shellcheck source=lib/gitops.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/gitops.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+# shellcheck source=../lib/gitops.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/gitops.sh"
 
 SKIP_DRIFT=0; [[ "${1:-}" == "--skip-drift" ]] && SKIP_DRIFT=1
 SCENARIO="${DEMO_SCENARIO:-bad-config}"
@@ -66,7 +66,7 @@ if [[ "$GITOPS_MODE" == remote ]]; then
 fi
 gitops_open || die "cannot open the GitOps source"
 git -C "$WORKCLONE" diff --quiet || die "the GitOps work clone has uncommitted changes ($WORKCLONE)"
-"$ROOT/scripts/verify.sh" --label demo-baseline --wait 120 --no-monitoring >/dev/null \
+"$ROOT/scripts/verify/verify.sh" --label demo-baseline --wait 120 --no-monitoring >/dev/null \
   || die "the system is not healthy to begin with - refusing to start the demo. Run ./run.sh verify"
 ev precondition pass "baseline verification passed; demo starts from a healthy system"
 
@@ -131,7 +131,7 @@ ev bad-release pushed "bad revision ${BAD_SHA:0:12} on top of known-good ${GOOD_
 
 # ------------------------------------------------------------------ 4/5. detect + explain
 step "4/8  Argo CD observes it; release verification must FAIL"
-if "$ROOT/scripts/verify.sh" --label demo-bad-release --wait 180 --no-monitoring --expect-revision "$BAD_SHA" "${EXPECT_FLAG[@]}"; then
+if "$ROOT/scripts/verify/verify.sh" --label demo-bad-release --wait 180 --no-monitoring --expect-revision "$BAD_SHA" "${EXPECT_FLAG[@]}"; then
   ev detection error "verification PASSED for a deliberately broken release - the failure injection did not work"
   die "unexpected: the bad release passed verification"
 fi
@@ -169,7 +169,7 @@ REVERT_PUSHED=1
 ev rollback pushed "revert commit ${REVERT_SHA:0:12} restores the desired state of ${GOOD_SHA:0:12}"
 
 step "7/8  Argo CD reconciles the known-good state; verify again"
-if "$ROOT/scripts/verify.sh" --label demo-recovery --wait 300 --no-monitoring --expect-revision "$REVERT_SHA" --expect-digest "$GOOD_DIGEST"; then
+if "$ROOT/scripts/verify/verify.sh" --label demo-recovery --wait 300 --no-monitoring --expect-revision "$REVERT_SHA" --expect-digest "$GOOD_DIGEST"; then
   RECOVERED=1; RECOVER_SECONDS=$((SECONDS - REC_AT))
   kill "$PROBE_PID" 2>/dev/null; PROBE_PID=""
   total=$(wc -l <"$PROBE_LOG"); okc=$(grep -c '^200$' "$PROBE_LOG" || true)

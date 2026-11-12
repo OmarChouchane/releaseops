@@ -1,5 +1,5 @@
 variable "kubeconfig_path" {
-  description = "Path to the kubeconfig of the kind cluster (written by scripts/cluster.sh)."
+  description = "Path to the kubeconfig of the kind cluster (written by scripts/setup/cluster.sh)."
   type        = string
 }
 
@@ -98,7 +98,7 @@ variable "kube_prometheus_stack_chart_version" {
   default = "92.9.0"
 }
 
-# ------------------------------------------------------------------ NodePorts (match scripts/cluster.sh)
+# ------------------------------------------------------------------ NodePorts (match scripts/setup/cluster.sh)
 variable "argocd_node_port" {
   type    = number
   default = 30081

@@ -3,10 +3,10 @@
 # Subcommands: test | build | scan | sbom | publish | pin | all
 # Each step records what really happened in .releaseops/*.json
 set -euo pipefail
-# shellcheck source=lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
-# shellcheck source=lib/gitops.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib/gitops.sh"
+# shellcheck source=../lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+# shellcheck source=../lib/gitops.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/gitops.sh"
 
 BUILD_JSON="$STATE_DIR/build.json"
 IMAGE_JSON="$STATE_DIR/image.json"
