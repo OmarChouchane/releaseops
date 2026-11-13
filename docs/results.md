@@ -2,6 +2,8 @@
 
 Measured results from the runs on the author's machine. Raw evidence is in [evidence/](evidence/).
 
+> **Note on the layout.** These runs used the earlier folder layout. Terraform was later split into `infra/terraform/modules` and `infra/terraform/environments/*`, and the scripts were grouped into `scripts/{setup,release,verify,lib,ci}/`. Since then CI is green and `./run.sh validate`, `terraform validate` and the link and path checks pass. A full `./run.sh up` on the new layout has not been completed yet.
+
 Everything here was produced on **one machine**, with the code exactly as delivered (the final clean-room run: `up` then `demo`): Windows 10 + WSL2 Ubuntu 24.04, Docker Desktop 28.3.2 (16 CPUs, 7.7 GiB visible), kind v0.33.0 / Kubernetes 1.36.4, Helm 4.1.3, Terraform 1.14.5, from a WSL-native working copy. Raw evidence is committed in [`docs/evidence/`](evidence/) (release report, per-check verification JSON, demo result, SBOM, scanner report).
 
 | Check | Command | Result |

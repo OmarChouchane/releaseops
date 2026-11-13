@@ -14,7 +14,7 @@ release really works, shows what happens when a release is **bad**, and recovers
 
 | Verified by running it | Not verified |
 |---|---|
-| `./run.sh up` (12/12 release checks) and `./run.sh demo` on a local kind cluster; 15 tests; image scan; CI on GitHub | `GITOPS_MODE=remote` end to end; anything on AWS (`terraform validate` only); other machines or OSes |
+| `./run.sh up` (12/12 release checks) and `./run.sh demo` on a local kind cluster; 15 tests; image scan; CI on GitHub | `GITOPS_MODE=remote` end to end; anything on AWS (`terraform validate` only); other machines or OSes; a full `up` since the folder restructure (CI and static checks pass) |
 
 Details and numbers: [docs/results.md](docs/results.md). Limits: [docs/limitations.md](docs/limitations.md).
 
