@@ -6,6 +6,9 @@ name: ci
 
 on:
   pull_request:
+    # Release PRs only repin the image digest; GitHub fails to start runs for them, so skip them
+    paths-ignore:
+      - deploy/environments/**
   push:
     branches: [main]
     # A release merge only changes the pinned digest: do not rebuild (avoids a release loop)
